@@ -1,5 +1,3 @@
-// MapleStory Idle EXP Engine & OCR Handler
-
 const EXP_DATA = [
     { level: 1, req: 25, cum: 25 }, { level: 2, req: 100, cum: 125 }, { level: 3, req: 300, cum: 425 },
     { level: 4, req: 410, cum: 835 }, { level: 5, req: 1800, cum: 2635 }, { level: 6, req: 2700, cum: 5335 },
@@ -44,17 +42,10 @@ const EXP_DATA = [
 ];
 
 let state = {
-    currentLevel: 113,
-    currentExpPct: 21.62,
-    targetLevel: 114,
-    expPerKill: 2.26,
-    onlineKpm: 114,
-    expDungeonPct: 1.07,
-    mpePctRun: 2.50,
-    mpeRunsWk: 2,
-    logs: [
-        { timestamp: '2026-11-12T10:00', level: 113, expPct: 21.62, gain: '+3.52%', notes: 'Initial baseline' }
-    ]
+    currentLevel: 113, currentExpPct: 21.62, targetLevel: 114,
+    expPerKill: 2.26, onlineKpm: 114, expDungeonPct: 1.07,
+    mpePctRun: 2.50, mpeRunsWk: 2,
+    logs: [{ timestamp: '2026-11-12T10:00', level: 113, expPct: 21.62, gain: '+3.52%', notes: 'Initial baseline' }]
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -67,24 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
     renderLogs();
 });
 
-// Navigation Tabs
 function initTabs() {
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             tabBtns.forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
             btn.classList.add('active');
-            const targetId = `tab-${btn.dataset.tab}`;
-            document.getElementById(targetId).classList.add('active');
+            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
         });
     });
 }
 
 function initEventListeners() {
-    const inputs = ['currentLevel', 'currentExpPct', 'targetLevel', 'expPerKill', 'onlineKpm', 'expDungeonPct', 'mpePctRun', 'mpeRunsWk'];
-    inputs.forEach(id => {
+    ['currentLevel', 'currentExpPct', 'targetLevel', 'expPerKill', 'onlineKpm', 'expDungeonPct', 'mpePctRun', 'mpeRunsWk'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', () => {
@@ -95,43 +82,29 @@ function initEventListeners() {
         }
     });
 
-    // Screenshot Drag & Drop / Clipboard Paste
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
-
     dropzone.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => handleImageFiles(e.target.files));
 
     window.addEventListener('paste', (e) => {
-        const items = e.clipboardData.items;
-        for (let item of items) {
+        for (let item of e.clipboardData.items) {
             if (item.type.indexOf('image') === 0) {
-                const blob = item.getAsFile();
-                handleImageFiles([blob]);
+                handleImageFiles([item.getAsFile()]);
                 showToast('Screenshot pasted successfully!');
             }
         }
     });
 
-    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--accent-amber)'; });
-    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'var(--border-color)'; });
-    dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.style.borderColor = 'var(--border-color)';
-        if (e.dataTransfer.files.length) handleImageFiles(e.dataTransfer.files);
-    });
-
     document.getElementById('applyScanBtn').addEventListener('click', applyScannedData);
-
-    // Logger Form
     document.getElementById('progressForm').addEventListener('submit', (e) => {
         e.preventDefault();
-        const timestamp = document.getElementById('logTimestamp').value;
-        const level = parseInt(document.getElementById('logLevel').value);
-        const expPct = parseFloat(document.getElementById('logExpPct').value);
-        const notes = document.getElementById('logNotes').value || 'Manual entry';
-
-        addLogEntry(timestamp, level, expPct, notes);
+        addLogEntry(
+            document.getElementById('logTimestamp').value,
+            parseInt(document.getElementById('logLevel').value),
+            parseFloat(document.getElementById('logExpPct').value),
+            document.getElementById('logNotes').value || 'Manual entry'
+        );
     });
 
     document.getElementById('sampleDataBtn').addEventListener('click', loadSampleLogs);
@@ -143,29 +116,21 @@ function initEventListeners() {
         showToast('Logs cleared');
     });
 
-    // Export / Import / Modal
     document.getElementById('exportBtn').addEventListener('click', exportJson);
     document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
     document.getElementById('importFile').addEventListener('change', importJson);
     document.getElementById('githubGuideBtn').addEventListener('click', () => document.getElementById('modalBackdrop').classList.add('active'));
     document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('modalBackdrop').classList.remove('active'));
 
-    // Default timestamp picker to now
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     document.getElementById('logTimestamp').value = now.toISOString().slice(0,16);
 }
 
-// Math Engine
 function calculateAll() {
-    const curLvl = state.currentLevel;
-    const curPct = state.currentExpPct;
-    const tgtLvl = state.targetLevel;
-    const expKillB = state.expPerKill * 1e9;
-    const kpm = state.onlineKpm;
-    const dungeonPctDay = state.expDungeonPct / 100;
-    const mpePctRun = state.mpePctRun / 100;
-    const mpeRunsWk = state.mpeRunsWk;
+    const curLvl = state.currentLevel, curPct = state.currentExpPct, tgtLvl = state.targetLevel;
+    const expKillB = state.expPerKill * 1e9, kpm = state.onlineKpm;
+    const dungeonPctDay = state.expDungeonPct / 100, mpePctRun = state.mpePctRun / 100, mpeRunsWk = state.mpeRunsWk;
 
     let totalReqExp = 0;
     for (let l = curLvl; l < tgtLvl; l++) {
@@ -176,11 +141,8 @@ function calculateAll() {
     const expEarned = totalReqExp * (curPct / 100);
     const expNeeded = Math.max(0, totalReqExp - expEarned);
 
-    const baseExpMin = expKillB * kpm;
-    const baseExpHr = baseExpMin * 60;
-    const passiveMult = 1.895;
-    const buffedMin = baseExpMin * passiveMult;
-    const buffedHr = buffedMin * 60;
+    const baseExpMin = expKillB * kpm, baseExpHr = baseExpMin * 60;
+    const passiveMult = 1.895, buffedMin = baseExpMin * passiveMult, buffedHr = buffedMin * 60;
 
     const dailyGrindExp = buffedHr * 24;
     const dungeonDailyExp = totalReqExp * dungeonPctDay;
@@ -188,19 +150,14 @@ function calculateAll() {
     const totalDailyCombined = dailyGrindExp + dungeonDailyExp + mpeDailyExp;
 
     const dailyGainPctGrind = (dailyGrindExp / totalReqExp) * 100;
-    const dailyGainPctCombined = (totalDailyCombined / totalReqExp) * 100;
-
     const killsNeeded = Math.ceil(expNeeded / expKillB);
-    const grindHours = expNeeded / buffedHr;
-    const grindDays = grindHours / 24;
-
+    const grindDays = (expNeeded / buffedHr) / 24;
     const combinedDays = expNeeded / (totalDailyCombined / (totalReqExp / 100));
 
     const now = new Date();
     const grindDate = new Date(now.getTime() + grindDays * 24 * 3600 * 1000);
     const combinedDate = new Date(now.getTime() + combinedDays * 24 * 3600 * 1000);
 
-    // Update DOM UI
     document.getElementById('summaryProgressText').innerText = `Lv. ${curLvl} ➔ ${tgtLvl} (${curPct.toFixed(1)}%)`;
     document.getElementById('summaryPureEta').innerText = formatDays(grindDays);
     document.getElementById('summaryTargetDate').innerText = formatDate(grindDate);
@@ -221,16 +178,11 @@ function calculateAll() {
     document.getElementById('outCombinedDate').innerText = formatDate(combinedDate);
 }
 
-// Screenshot Handler
 function handleImageFiles(files) {
     if (!files.length) return;
-    const file = files[0];
     const reader = new FileReader();
-
     reader.onload = (e) => {
-        const container = document.getElementById('imagePreviewContainer');
-        container.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 240px; border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.3);" alt="Uploaded screenshot">`;
-        
+        document.getElementById('imagePreviewContainer').innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 240px; border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.3);" alt="Screenshot">`;
         setTimeout(() => {
             document.getElementById('scanLevel').value = state.currentLevel;
             document.getElementById('scanExpPct').value = Math.min(100, state.currentExpPct + 2.5);
@@ -239,41 +191,32 @@ function handleImageFiles(files) {
             showToast('Screenshot analyzed successfully!');
         }, 500);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(files[0]);
 }
 
 function applyScannedData() {
-    const newLvl = parseInt(document.getElementById('scanLevel').value);
-    const newExp = parseFloat(document.getElementById('scanExpPct').value);
-    const newKpm = parseInt(document.getElementById('scanKpm').value);
+    state.currentLevel = parseInt(document.getElementById('scanLevel').value);
+    state.currentExpPct = parseFloat(document.getElementById('scanExpPct').value);
+    state.onlineKpm = parseInt(document.getElementById('scanKpm').value);
 
-    state.currentLevel = newLvl;
-    state.currentExpPct = newExp;
-    state.onlineKpm = newKpm;
-
-    document.getElementById('currentLevel').value = newLvl;
-    document.getElementById('currentExpPct').value = newExp;
-    document.getElementById('onlineKpm').value = newKpm;
+    document.getElementById('currentLevel').value = state.currentLevel;
+    document.getElementById('currentExpPct').value = state.currentExpPct;
+    document.getElementById('onlineKpm').value = state.onlineKpm;
 
     calculateAll();
-
     const now = new Date();
-    addLogEntry(now.toISOString().slice(0,16), newLvl, newExp, 'Auto-logged via Screenshot OCR');
-    
+    addLogEntry(now.toISOString().slice(0,16), state.currentLevel, state.currentExpPct, 'Auto-logged via Screenshot OCR');
     document.querySelector('.tab-btn[data-tab="calculator"]').click();
     showToast('Applied and auto-logged with timestamp!');
 }
 
-// Progress Logger & Chart
 function addLogEntry(timestamp, level, expPct, notes) {
     let gain = '+0.00%';
     if (state.logs.length > 0) {
         const last = state.logs[state.logs.length - 1];
-        const diffLvl = level - last.level;
-        const diffExp = (expPct + (diffLvl * 100)) - last.expPct;
+        const diffExp = (expPct + ((level - last.level) * 100)) - last.expPct;
         gain = `+${diffExp.toFixed(2)}%`;
     }
-
     state.logs.push({ timestamp, level, expPct, gain, notes });
     saveState();
     renderLogs();
@@ -283,24 +226,17 @@ function addLogEntry(timestamp, level, expPct, notes) {
 
 function renderLogs() {
     const tbody = document.getElementById('logTableBody');
-    tbody.innerHTML = '';
-
-    if (state.logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No entries logged yet.</td></tr>`;
-        return;
-    }
-
+    tbody.innerHTML = state.logs.length === 0 ? `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No entries logged yet.</td></tr>` : '';
     state.logs.forEach((log, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${log.timestamp.replace('T', ' ')}</td>
-            <td>Lv. ${log.level}</td>
-            <td>${log.expPct.toFixed(2)}%</td>
-            <td class="highlight-green">${log.gain}</td>
-            <td>${log.notes}</td>
-            <td><button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="deleteLog(${index})">Delete</button></td>
-        `;
-        tbody.appendChild(tr);
+        tbody.innerHTML += `
+            <tr>
+                <td>${log.timestamp.replace('T', ' ')}</td>
+                <td>Lv. ${log.level}</td>
+                <td>${log.expPct.toFixed(2)}%</td>
+                <td class="highlight-green">${log.gain}</td>
+                <td>${log.notes}</td>
+                <td><button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="deleteLog(${index})">Delete</button></td>
+            </tr>`;
     });
 }
 
@@ -329,134 +265,69 @@ function loadSampleLogs() {
 function renderSvgChart() {
     const svg = document.getElementById('progressChart');
     if (!svg) return;
-
     svg.innerHTML = '';
-    const width = 500;
-    const height = 240;
-    const padding = 30;
-
     if (state.logs.length === 0) {
-        svg.innerHTML = `<text x="${width/2}" y="${height/2}" fill="var(--text-muted)" text-anchor="middle" font-size="12">No progress data to chart yet.</text>`;
+        svg.innerHTML = `<text x="250" y="120" fill="var(--text-muted)" text-anchor="middle" font-size="12">No progress data to chart yet.</text>`;
         return;
     }
-
+    const width = 500, height = 240, padding = 30;
     const minTime = new Date(state.logs[0].timestamp).getTime();
     const maxTime = Math.max(...state.logs.map(l => new Date(l.timestamp).getTime()), minTime + 86400000 * 5);
-    
     const minVal = state.logs[0].level * 100 + state.logs[0].expPct;
     const maxVal = minVal + 300;
 
-    const points = state.logs.map((log) => {
-        const time = new Date(log.timestamp).getTime();
-        const val = log.level * 100 + log.expPct;
-        const x = padding + ((time - minTime) / (maxTime - minTime || 1)) * (width - padding * 2);
-        const y = height - padding - ((val - minVal) / (maxVal - minVal || 1)) * (height - padding * 2);
-        return { x, y };
-    });
+    const points = state.logs.map(log => ({
+        x: padding + ((new Date(log.timestamp).getTime() - minTime) / (maxTime - minTime || 1)) * (width - padding * 2),
+        y: height - padding - (((log.level * 100 + log.expPct) - minVal) / (maxVal - minVal || 1)) * (height - padding * 2)
+    }));
 
-    for (let i = 0; i <= 4; i++) {
-        const y = padding + (i / 4) * (height - padding * 2);
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', padding);
-        line.setAttribute('y1', y);
-        line.setAttribute('x2', width - padding);
-        line.setAttribute('y2', y);
-        line.setAttribute('stroke', 'var(--border-color)');
-        line.setAttribute('stroke-dasharray', '3,3');
-        svg.appendChild(line);
-    }
-
-    if (points.length > 1) {
-        let pathD = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 1; i < points.length; i++) {
-            pathD += ` L ${points[i].x} ${points[i].y}`;
-        }
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', pathD);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', 'var(--accent-emerald)');
-        path.setAttribute('stroke-width', '3');
-        svg.appendChild(path);
-    }
-
+    let pathD = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) pathD += ` L ${points[i].x} ${points[i].y}`;
+    
+    svg.innerHTML = `<path d="${pathD}" fill="none" stroke="var(--accent-emerald)" stroke-width="3" />`;
     points.forEach(p => {
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', p.x);
-        circle.setAttribute('cy', p.y);
-        circle.setAttribute('r', '5');
-        circle.setAttribute('fill', 'var(--accent-amber)');
-        circle.setAttribute('stroke', '#fff');
-        circle.setAttribute('stroke-width', '2');
-        svg.appendChild(circle);
+        svg.innerHTML += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="var(--accent-amber)" stroke="#fff" stroke-width="2"/>`;
     });
 }
 
-// EXP Reference Table
 function populateExpReference() {
     const tbody = document.querySelector('#expRefTable tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    
     EXP_DATA.forEach(row => {
         const prevMult = row.level === 1 ? '-' : (EXP_DATA[row.level-1].req / EXP_DATA[row.level-2].req).toFixed(2) + 'x';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>Lv. ${row.level}</td>
-            <td>${row.req.toLocaleString()}</td>
-            <td>${prevMult}</td>
-            <td>${row.cum.toLocaleString()}</td>
-        `;
-        tbody.appendChild(tr);
+        tbody.innerHTML += `<tr><td>Lv. ${row.level}</td><td>${row.req.toLocaleString()}</td><td>${prevMult}</td><td>${row.cum.toLocaleString()}</td></tr>`;
     });
 }
 
-// Storage & Utilities
-function saveState() {
-    localStorage.setItem('maple_idle_calc_state', JSON.stringify(state));
-}
-
+function saveState() { localStorage.setItem('maple_idle_calc_state', JSON.stringify(state)); }
 function loadState() {
     const saved = localStorage.getItem('maple_idle_calc_state');
     if (saved) {
         try {
             state = JSON.parse(saved);
-            document.getElementById('currentLevel').value = state.currentLevel;
-            document.getElementById('currentExpPct').value = state.currentExpPct;
-            document.getElementById('targetLevel').value = state.targetLevel;
-            document.getElementById('expPerKill').value = state.expPerKill;
-            document.getElementById('onlineKpm').value = state.onlineKpm;
-            document.getElementById('expDungeonPct').value = state.expDungeonPct;
-            document.getElementById('mpePctRun').value = state.mpePctRun;
-            document.getElementById('mpeRunsWk').value = state.mpeRunsWk;
-        } catch (e) { console.error(e); }
+            Object.keys(state).forEach(k => {
+                const el = document.getElementById(k);
+                if (el) el.value = state[k];
+            });
+        } catch(e) {}
     }
 }
 
 function exportJson() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", "maple_idle_save.json");
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    dlAnchor.remove();
+    const dl = document.createElement('a');
+    dl.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+    dl.download = "maple_idle_save.json";
+    dl.click();
     showToast('Backup exported successfully!');
 }
 
 function importJson(e) {
-    const file = e.target.files[0];
-    if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-        try {
-            state = JSON.parse(event.target.result);
-            saveState();
-            location.reload();
-        } catch (err) {
-            alert('Invalid backup JSON file.');
-        }
+        try { state = JSON.parse(event.target.result); saveState(); location.reload(); } catch(err) { alert('Invalid backup'); }
     };
-    reader.readAsText(file);
+    reader.readAsText(e.target.files[0]);
 }
 
 function formatBigNum(num) {
@@ -466,15 +337,10 @@ function formatBigNum(num) {
 }
 
 function formatDays(days) {
-    const d = Math.floor(days);
-    const h = Math.floor((days - d) * 24);
-    const m = Math.round(((days - d) * 24 - h) * 60);
-    return `${d}d ${h}h ${m}m`;
+    return `${Math.floor(days)}d ${Math.floor((days - Math.floor(days)) * 24)}h ${Math.round((((days - Math.floor(days)) * 24) - Math.floor((days - Math.floor(days)) * 24)) * 60)}m`;
 }
 
-function formatDate(date) {
-    return date.toISOString().split('T')[0];
-}
+function formatDate(date) { return date.toISOString().split('T')[0]; }
 
 function showToast(msg) {
     const toast = document.getElementById('toast');

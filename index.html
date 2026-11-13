@@ -1,906 +1,281 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MapleStory Idle — EXP Calculator & Progress Logger</title>
-  
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            maple: {
-              50: '#fffbeb',
-              100: '#fef3c7',
-              400: '#fbbf24',
-              500: '#f59e0b',
-              600: '#d97706',
-              700: '#b45309',
-              900: '#78350f',
-            },
-            obsidian: {
-              800: '#131b2e',
-              850: '#0d1322',
-              900: '#0b0f19',
-              950: '#060911',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Google Fonts & Font Awesome Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
-
-  <!-- Client-side Tesseract.js OCR for offline/free screenshot reading -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-  <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapleStory Idle — EXP Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen flex flex-col pb-16 md:pb-8">
-
-  <!-- TOP APP HEADER -->
-  <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-obsidian-900/95 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      
-      <!-- Logo & Title -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-maple-600 via-amber-500 to-amber-300 flex items-center justify-center text-xl shadow-lg shadow-amber-500/25">
-          🍁
-        </div>
-        <div>
-          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
-            MapleStory Idle <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-maple-500/20 text-maple-400 border border-maple-500/30 font-semibold">Pro EXP Logger</span>
-          </h1>
-          <p class="text-[11px] text-slate-400 hidden sm:block">Interactive Calculator, KPM Screenshot Scanner & Progress Tracker</p>
-        </div>
-      </div>
-
-      <!-- Action & Navigation Controls -->
-      <div class="flex items-center space-x-1.5 sm:space-x-2">
-        <!-- Preset Dropdown -->
-        <select id="presetSelect" onchange="loadPreset(this.value)" class="hidden md:block text-xs bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-2.5 py-1.5 focus:border-maple-500 focus:outline-none">
-          <option value="sheet">📊 Sheet Default (Lv 113)</option>
-          <option value="early">🌱 Early Game (Lv 60)</option>
-          <option value="mid">⚡ Mid Game (Lv 95)</option>
-          <option value="late">🔥 Late Game (Lv 120)</option>
-        </select>
-
-        <!-- Screenshot KPM Scanner Shortcut -->
-        <button onclick="openScreenshotModal()" class="flex items-center gap-1.5 text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold transition">
-          <i class="fa-solid fa-camera-retro text-indigo-400"></i>
-          <span class="hidden sm:inline">Scan Print Screen</span>
-        </button>
-
-        <!-- Save JSON -->
-        <button onclick="exportSaveJSON()" title="Export JSON Save Data" class="p-2 text-slate-300 hover:text-amber-400 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700/80 transition text-xs flex items-center gap-1.5">
-          <i class="fa-solid fa-file-export"></i>
-          <span class="hidden lg:inline">Backup</span>
-        </button>
-
-        <!-- Import JSON -->
-        <button onclick="triggerImportSave()" title="Import JSON Save Data" class="p-2 text-slate-300 hover:text-emerald-400 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700/80 transition text-xs flex items-center gap-1.5">
-          <i class="fa-solid fa-file-import"></i>
-          <span class="hidden lg:inline">Restore</span>
-        </button>
-        <input type="file" id="importFileInput" onchange="importSaveJSON(event)" class="hidden" accept=".json">
-
-        <!-- Reset Button -->
-        <button onclick="resetDefaults()" title="Reset to Defaults" class="p-2 text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700/80 transition">
-          <i class="fa-solid fa-rotate-left text-xs sm:text-sm"></i>
-        </button>
-
-        <!-- GitHub Structure Guide Modal -->
-        <button onclick="openGitHubModal()" class="flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition">
-          <i class="fa-brands fa-github text-sm text-amber-400"></i>
-          <span class="hidden sm:inline">GitHub Files</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- TOAST NOTIFICATION BANNER -->
-  <div id="toastBanner" class="fixed bottom-5 right-5 z-50 hidden max-w-sm bg-slate-900/95 border border-emerald-500/40 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs">
-    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
-    <span id="toastMessage">Action completed!</span>
-  </div>
-
-  <!-- MAIN CONTAINER -->
-  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-
-    <!-- TOP KPI SUMMARY CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-      <!-- CARD 1: Current Level Progress -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Goal</span>
-          <span class="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-maple-400 font-mono" id="heroLevelSpan">Lv. 113 ➔ 114</span>
-        </div>
-        <div class="my-3">
-          <div class="flex justify-between items-baseline mb-1">
-            <span class="text-2xl font-black text-white font-mono-num" id="heroCurrentExpPercent">21.62%</span>
-            <span class="text-xs text-slate-400 font-mono-num" id="heroExpRatio">4,322 T / 19,992 T</span>
-          </div>
-          <!-- Progress Bar -->
-          <div class="w-full bg-slate-900 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
-            <div id="heroProgressBar" class="bg-gradient-to-r from-maple-500 to-amber-300 h-full rounded-full transition-all duration-500" style="width: 21.62%"></div>
-          </div>
-        </div>
-        <div class="text-[11px] text-slate-400 flex justify-between">
-          <span>Remaining to Target:</span>
-          <span class="text-amber-400 font-semibold font-mono-num" id="heroExpNeeded">15,670 T</span>
-        </div>
-      </div>
-
-      <!-- CARD 2: Pure Grind ETA -->
-      <div class="glass-card glass-card-amber rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
-          <span class="text-xs font-semibold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-fire text-amber-500"></i> Pure Grind ETA
-          </span>
-          <span class="text-[11px] text-slate-400 font-mono-num" id="heroPureDailyGain">+3.52%/day</span>
-        </div>
-        <div class="my-3">
-          <div class="text-2xl font-black text-amber-300 font-mono-num" id="heroPureEtaDays">22d 6h 58m</div>
-          <div class="text-xs text-slate-400 mt-1 flex items-center gap-1">
-            <i class="fa-regular fa-calendar text-slate-500 text-xs"></i>
-            <span id="heroPureTargetDate">Dec 5, 2026</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-slate-400 flex justify-between">
-          <span>Daily Grind Yield:</span>
-          <span class="text-slate-200 font-semibold font-mono-num" id="heroDailyGrindYield">703.05 T</span>
-        </div>
-      </div>
-
-      <!-- CARD 3: Combined ETA (Dungeons + Boosters + Events) -->
-      <div class="glass-card glass-card-emerald glow-emerald rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden">
-        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
-          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <i class="fa-solid fa-bolt text-emerald-400"></i> Combined ETA
-          </span>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" id="heroTimeSavedBadge">
-            ⚡ -10.8 days
-          </span>
-        </div>
-        <div class="my-3">
-          <div class="text-2xl font-black text-emerald-300 font-mono-num" id="heroCombinedEtaDays">11d 12h 37m</div>
-          <div class="text-xs text-slate-400 mt-1 flex items-center gap-1">
-            <i class="fa-regular fa-calendar-check text-emerald-400 text-xs"></i>
-            <span class="text-emerald-200 font-medium" id="heroCombinedTargetDate">Nov 24, 2026</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-slate-400 flex justify-between">
-          <span>Combined Yield:</span>
-          <span class="text-emerald-400 font-semibold font-mono-num" id="heroCombinedDailyYield">1,359.20 T/day</span>
-        </div>
-      </div>
-
-      <!-- CARD 4: Velocity Pace Status (From Progress Logger) -->
-      <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Logged Pace Status</span>
-          <span id="kpiPaceBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-            No Logs Yet
-          </span>
-        </div>
-        <div class="my-2">
-          <div class="flex justify-between items-baseline mb-1">
-            <span class="text-xs text-slate-400">Actual Logged Velocity:</span>
-            <span class="text-base font-bold text-amber-400 font-mono-num" id="kpiActualVelocity">0.00%/day</span>
-          </div>
-          <div class="flex justify-between items-baseline">
-            <span class="text-xs text-slate-400">Projected Goal Pace:</span>
-            <span class="text-xs text-emerald-400 font-mono-num" id="kpiProjectedVelocity">+6.80%/day</span>
-          </div>
-        </div>
-        <div class="text-[11px] text-slate-400 flex justify-between pt-2 border-t border-slate-800/80">
-          <span>Logged Completion ETA:</span>
-          <span class="text-white font-semibold font-mono-num" id="kpiLoggedEtaDate">--</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- MAIN NAVIGATION TABS -->
-    <div class="border-b border-slate-800">
-      <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto pb-1" aria-label="Tabs">
-        <button onclick="switchTab('calc')" id="tab-calc" class="tab-btn active text-amber-400 border-amber-500 border-b-2 font-bold px-4 py-2.5 text-sm whitespace-nowrap flex items-center gap-2 transition">
-          <i class="fa-solid fa-calculator"></i>
-          <span>1. Calculator & Rates</span>
-        </button>
-        <button onclick="switchTab('scanner')" id="tab-scanner" class="tab-btn text-slate-400 hover:text-slate-200 border-transparent border-b-2 font-medium px-4 py-2.5 text-sm whitespace-nowrap flex items-center gap-2 transition">
-          <i class="fa-solid fa-camera-retro text-indigo-400"></i>
-          <span>2. Print Screen KPM Scanner</span>
-          <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">NEW</span>
-        </button>
-        <button onclick="switchTab('logger')" id="tab-logger" class="tab-btn text-slate-400 hover:text-slate-200 border-transparent border-b-2 font-medium px-4 py-2.5 text-sm whitespace-nowrap flex items-center gap-2 transition">
-          <i class="fa-solid fa-chart-line text-emerald-400"></i>
-          <span>3. Progress Logger & Chart</span>
-          <span id="loggerTabBadge" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">0 logs</span>
-        </button>
-        <button onclick="switchTab('timeline')" id="tab-timeline" class="tab-btn text-slate-400 hover:text-slate-200 border-transparent border-b-2 font-medium px-4 py-2.5 text-sm whitespace-nowrap flex items-center gap-2 transition">
-          <i class="fa-regular fa-calendar-days"></i>
-          <span>4. Schedule</span>
-        </button>
-        <button onclick="switchTab('exptable')" id="tab-exptable" class="tab-btn text-slate-400 hover:text-slate-200 border-transparent border-b-2 font-medium px-4 py-2.5 text-sm whitespace-nowrap flex items-center gap-2 transition">
-          <i class="fa-solid fa-table-list"></i>
-          <span>5. EXP Table</span>
-        </button>
-      </nav>
-    </div>
-
-    <!-- TAB 1: CALCULATOR & RATES (MAIN) -->
-    <div id="view-calc" class="tab-view space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left Column: Inputs & Buffs -->
-        <div class="lg:col-span-5 space-y-6">
-          <div class="glass-card rounded-2xl p-5 border border-slate-800">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 mb-4 flex items-center justify-between">
-              <span class="flex items-center gap-2">
-                <i class="fa-solid fa-sliders text-amber-500"></i> Character & Grind Setup
-              </span>
-              <button onclick="openQuickLogModal()" class="text-[11px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 flex items-center gap-1 transition">
-                <i class="fa-solid fa-plus text-xs"></i> Quick Log EXP
-              </button>
-            </h3>
-
-            <div class="space-y-4">
-              <!-- Current Level -->
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label for="inputCurrentLevel" class="text-xs font-semibold text-slate-300">Current Level</label>
-                  <span class="text-[11px] text-slate-400">Min 1</span>
-                </div>
-                <input type="number" id="inputCurrentLevel" value="113" min="1" max="200" oninput="calculateAll()"
-                  class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-amber-500 focus:outline-none transition">
-              </div>
-
-              <!-- Current EXP % -->
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label for="inputCurrentExpPercent" class="text-xs font-semibold text-slate-300">Current EXP %</label>
-                  <span class="text-[11px] font-mono-num text-slate-400" id="currentExpPercentDisplay">21.62%</span>
-                </div>
-                <input type="number" step="0.01" id="inputCurrentExpPercent" value="21.62" min="0" max="99.99" oninput="calculateAll()"
-                  class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-amber-500 focus:outline-none transition">
-              </div>
-
-              <!-- Target Level -->
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label for="inputTargetLevel" class="text-xs font-semibold text-slate-300">Target Level</label>
-                  <span class="text-[11px] text-slate-400" id="targetLevelNote">Target goal</span>
-                </div>
-                <input type="number" id="inputTargetLevel" value="114" min="2" max="200" oninput="calculateAll()"
-                  class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-amber-500 focus:outline-none transition">
-              </div>
-
-              <div class="border-t border-slate-800 pt-4"></div>
-
-              <!-- Base EXP / Kill + Unit -->
-              <div>
-                <label for="inputExpPerKill" class="text-xs font-semibold text-slate-300 mb-1 block">Base EXP / Kill (Without Passives)</label>
-                <div class="flex gap-2">
-                  <input type="number" step="0.01" id="inputExpPerKill" value="2.26" oninput="calculateAll()"
-                    class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-amber-500 focus:outline-none transition">
-                  <select id="inputExpUnit" onchange="calculateAll()" class="bg-slate-900 border border-slate-700 text-amber-400 font-bold rounded-xl px-3 py-2 text-sm focus:border-amber-500 focus:outline-none">
-                    <option value="1e6">M</option>
-                    <option value="1e9" selected>B</option>
-                    <option value="1e12">T</option>
-                    <option value="1e15">Qa</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Online & Offline KPM -->
-              <div class="grid grid-cols-2 gap-3">
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="maple-icon">🍁</span>
                 <div>
-                  <div class="flex justify-between items-center mb-1">
-                    <label for="inputOnlineKpm" class="text-xs font-semibold text-slate-300">Online KPM</label>
-                    <button onclick="switchTab('scanner')" class="text-[10px] text-indigo-400 hover:underline">Measure via Print</button>
-                  </div>
-                  <input type="number" id="inputOnlineKpm" value="114" min="1" max="500" oninput="calculateAll()"
-                    class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-amber-500 focus:outline-none transition">
+                    <h1>MapleStory Idle</h1>
+                    <p class="subtitle">EXP Calculator & Progress Hub</p>
                 </div>
-                <div>
-                  <label for="inputOfflineKpm" class="text-xs font-semibold text-slate-300 mb-1 block">Offline KPM</label>
-                  <input type="number" id="inputOfflineKpm" value="54" min="0" max="500" oninput="calculateAll()"
-                    class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-amber-500 focus:outline-none transition">
-                </div>
-              </div>
-
-              <!-- Online Hours Slider -->
-              <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label for="inputOnlineHours" class="text-xs font-semibold text-slate-300">Active Online Hours / Day</label>
-                  <span class="text-xs font-mono text-slate-400" id="offlineHoursDisplay">Offline: 0 hrs</span>
-                </div>
-                <input type="range" id="inputOnlineHours" min="0" max="24" step="1" value="24" oninput="syncOnlineHours(this.value); calculateAll();" class="w-full accent-amber-500">
-                <div class="flex justify-between text-[10px] text-slate-500 font-mono-num mt-0.5">
-                  <span>0h (Offline)</span>
-                  <span class="text-amber-400 font-bold" id="onlineHoursLabel">24 Hours Online</span>
-                  <span>24h (24/7)</span>
-                </div>
-              </div>
-
             </div>
-          </div>
-
-          <!-- Passives & Boosters Summary Block -->
-          <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Passives & Active Boosters
-              </h3>
-              <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30" id="passiveSummaryBadge">
-                +89.5% (1.895x)
-              </span>
+            <div class="header-actions">
+                <button class="btn btn-outline" id="exportBtn" title="Backup Saves">📥 Export JSON</button>
+                <button class="btn btn-outline" id="importBtn" title="Restore Saves">📤 Import JSON</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+                <button class="btn btn-primary" id="githubGuideBtn">🚀 GitHub Deploy</button>
             </div>
+        </header>
 
-            <!-- Passive Inputs Grid -->
-            <div class="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <label class="text-slate-400 block mb-0.5">Coupon (%)</label>
-                <input type="number" step="0.1" id="buffCoupon" value="0.0" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num text-right focus:border-amber-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="text-slate-400 block mb-0.5">Guild (%)</label>
-                <input type="number" step="0.1" id="buffGuild" value="36.0" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num text-right focus:border-amber-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="text-slate-400 block mb-0.5">Hero Page (%)</label>
-                <input type="number" step="0.1" id="buffHeroPage" value="45.5" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num text-right focus:border-amber-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="text-slate-400 block mb-0.5">Hero Trail (%)</label>
-                <input type="number" step="0.1" id="buffHeroTrail" value="3.0" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num text-right focus:border-amber-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="text-slate-400 block mb-0.5">Ad-Free Pass (%)</label>
-                <input type="number" step="0.1" id="buffAdFree" value="5.0" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num text-right focus:border-amber-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="text-slate-400 block mb-0.5">Ability (%)</label>
-                <input type="number" step="0.1" id="buffAbility" value="0.0" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num text-right focus:border-amber-500 focus:outline-none">
-              </div>
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="calculator">🎯 Calculator & Yields</button>
+            <button class="tab-btn" data-tab="scanner">📸 Smart Screenshot OCR</button>
+            <button class="tab-btn" data-tab="logger">📈 Daily Progress & Charts</button>
+            <button class="tab-btn" data-tab="reference">📖 EXP Table (1–140)</button>
+        </nav>
+
+        <!-- MAIN TAB 1: CALCULATOR -->
+        <section class="tab-content active" id="tab-calculator">
+            <!-- Top Summary Banner -->
+            <div class="summary-banner">
+                <div class="summary-item">
+                    <span class="s-label">Current Progress</span>
+                    <span class="s-value" id="summaryProgressText">Lv. 113 ➔ 114 (21.6%)</span>
+                </div>
+                <div class="summary-item">
+                    <span class="s-label">⏱️ Pure Grind ETA</span>
+                    <span class="s-value highlight-amber" id="summaryPureEta">22d 6h 58m</span>
+                </div>
+                <div class="summary-item">
+                    <span class="s-label">🎯 Target Date</span>
+                    <span class="s-value highlight-green" id="summaryTargetDate">2026-12-04</span>
+                </div>
+                <div class="summary-item">
+                    <span class="s-label">📈 Daily Gain</span>
+                    <span class="s-value" id="summaryDailyGain">+3.52%/d</span>
+                </div>
             </div>
 
-            <!-- Boosters & Dungeons Toggles -->
-            <div class="pt-3 border-t border-slate-800 space-y-3">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label for="inputDungeonPercent" class="text-xs text-slate-300 block mb-1">EXP Dungeon %/d</label>
-                  <input type="number" step="0.01" id="inputDungeonPercent" value="1.07" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num focus:border-amber-500 focus:outline-none">
+            <div class="grid-2col">
+                <!-- Inputs Card -->
+                <div class="card">
+                    <h2>⚔️ Character Inputs</h2>
+                    <div class="input-group">
+                        <label>Current Level</label>
+                        <input type="number" id="currentLevel" value="113" min="1" max="140">
+                    </div>
+                    <div class="input-group">
+                        <label>Current EXP %</label>
+                        <input type="number" id="currentExpPct" value="21.62" step="0.01" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label>Target Level</label>
+                        <input type="number" id="targetLevel" value="114" min="2" max="140">
+                    </div>
+                    <div class="input-group">
+                        <label>EXP / Kill (Billion)</label>
+                        <input type="number" id="expPerKill" value="2.26" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>Online Kills / min (KPM)</label>
+                        <input type="number" id="onlineKpm" value="114" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label>EXP Dungeon % / day</label>
+                        <input type="number" id="expDungeonPct" value="1.07" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>MPE % / Run</label>
+                        <input type="number" id="mpePctRun" value="2.50" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>MPE Runs / Week</label>
+                        <input type="number" id="mpeRunsWk" value="2" step="1">
+                    </div>
                 </div>
-                <div>
-                  <label for="inputMpePercent" class="text-xs text-slate-300 block mb-1">MPE %/Run (x2/wk)</label>
-                  <input type="number" step="0.01" id="inputMpePercent" value="2.50" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono-num focus:border-amber-500 focus:outline-none">
-                  <input type="hidden" id="inputMpeRuns" value="2">
+
+                <!-- Outputs & Base Rates -->
+                <div class="stack">
+                    <div class="card">
+                        <h2>🗺️ Base Rates & Buffs</h2>
+                        <div class="table-preview">
+                            <div class="row"><span>Base EXP / min</span> <span id="outBaseExpMin">257.64 B</span></div>
+                            <div class="row"><span>Base EXP / hr</span> <span id="outBaseExpHr">15.46 T</span></div>
+                            <div class="row"><span>Passive Multiplier</span> <span id="outPassiveMult">1.895x</span></div>
+                            <div class="row"><span>Buffed EXP / min</span> <span id="outBuffedMin">488.23 B</span></div>
+                            <div class="row"><span>Buffed EXP / hr</span> <span id="outBuffedHr">29.29 T</span></div>
+                            <div class="row"><span>Total Daily Grind</span> <span id="outDailyGrind">703.05 T</span></div>
+                            <div class="row"><span>Kills Needed</span> <span id="outKillsNeeded">3,659,135</span></div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>⏱️ Level-Up ETAs</h2>
+                        <div class="table-preview">
+                            <div class="row"><span>Pure Grind ETA</span> <span class="highlight-amber" id="outGrindEta">22d 6h 58m</span></div>
+                            <div class="row"><span>Pure Grind Completion</span> <span id="outGrindDate">2026-12-04</span></div>
+                            <div class="row"><span>Combined Daily Gain</span> <span id="outCombinedDaily">1,359.60 T</span></div>
+                            <div class="row"><span>Combined Target ETA</span> <span class="highlight-green" id="outCombinedEta">11d 12h 37m</span></div>
+                            <div class="row"><span>Combined Target Date</span> <span id="outCombinedDate">2026-11-23</span></div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span class="text-xs text-slate-200">Ad Booster (20 min @ +110.7%)</span>
-                <input type="checkbox" id="toggleAdBooster" checked onchange="calculateAll()" class="w-4 h-4 accent-amber-500">
-              </div>
-
-              <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span class="text-xs text-pink-300">Anniversary Event (+1000% 1h/day)</span>
-                <input type="checkbox" id="toggleAnniversary" checked onchange="calculateAll()" class="w-4 h-4 accent-pink-500">
-              </div>
             </div>
-          </div>
-        </div>
+        </section>
 
-        <!-- Right Column: Calculated Base Rates & Daily Yield Breakdown -->
-        <div class="lg:col-span-7 space-y-6">
-          
-          <!-- Live Calculated Rates Cards -->
-          <div class="glass-card rounded-2xl p-5 border border-slate-800">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 mb-4 flex items-center gap-2">
-              <i class="fa-solid fa-chart-line text-amber-500"></i> Calculated EXP Rates & Multipliers
-            </h3>
+        <!-- MAIN TAB 2: SMART SCREENSHOT OCR SCANNER -->
+        <section class="tab-content" id="tab-scanner">
+            <div class="card">
+                <h2>📸 Instant Print Screen Analyzer</h2>
+                <p class="section-desc">Paste your game screenshot (`Ctrl + V` anywhere on this tab) or drop an image file below. The OCR engine extracts your <strong>Current Level</strong>, <strong>EXP %</strong>, and <strong>KPM / EXP values</strong>, calculates your metrics, and auto-logs your entry with the exact date and time!</p>
+                
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon">📋</div>
+                    <h3>Drag & Drop your MapleStory screenshot here</h3>
+                    <p>or click to browse • or press <kbd>Ctrl + V</kbd> anywhere</p>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                <span class="text-xs text-slate-400">Base EXP / Min</span>
-                <div class="text-lg font-bold text-white font-mono-num mt-0.5" id="calcBaseExpMin">257.64 B</div>
-                <span class="text-[10px] text-slate-400">Raw mob speed</span>
-              </div>
+                <div id="scanResultContainer" style="display: none; margin-top: 20px;">
+                    <h3>🔍 Extracted Data Preview</h3>
+                    <div class="preview-grid">
+                        <div class="input-group">
+                            <label>Detected Level</label>
+                            <input type="number" id="scanLevel">
+                        </div>
+                        <div class="input-group">
+                            <label>Detected EXP %</label>
+                            <input type="number" id="scanExpPct" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>Detected KPM</label>
+                            <input type="number" id="scanKpm">
+                        </div>
+                    </div>
+                    <div class="scan-actions" style="margin-top: 15px;">
+                        <button class="btn btn-primary" id="applyScanBtn">⚡ Apply to Calculator & Auto-Log Progress</button>
+                    </div>
+                </div>
 
-              <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                <span class="text-xs text-slate-400">Base EXP / Hr</span>
-                <div class="text-lg font-bold text-white font-mono-num mt-0.5" id="calcBaseExpHr">15.46 T</div>
-                <span class="text-[10px] text-slate-400">Unbuffed hourly</span>
-              </div>
-
-              <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                <span class="text-xs text-slate-400">Passive Multiplier</span>
-                <div class="text-lg font-bold text-amber-400 font-mono-num mt-0.5" id="calcPassiveMult">1.895x</div>
-                <span class="text-[10px] text-slate-400" id="calcPassivePercent">+89.50% Passives</span>
-              </div>
-
-              <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
-                <span class="text-xs text-slate-400">Buffed EXP / Hr</span>
-                <div class="text-lg font-bold text-amber-400 font-mono-num mt-0.5" id="calcBuffedExpHr">29.29 T</div>
-                <span class="text-[10px] text-slate-400" id="calcBuffedExpMin">488.23 B / min</span>
-              </div>
-
+                <div id="imagePreviewContainer" style="margin-top: 20px; text-align: center;"></div>
             </div>
-          </div>
+        </section>
 
-          <!-- Comprehensive Metrics Table -->
-          <div class="glass-card rounded-2xl p-5 border border-slate-800">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center justify-between">
-              <span class="flex items-center gap-2">
-                <i class="fa-solid fa-list-check text-amber-500"></i> Level EXP & Daily Breakdown Metrics
-              </span>
-              <span class="text-xs font-mono text-slate-400" id="levelReqRaw">19,992,310,000,000,000 EXP</span>
-            </h3>
+        <!-- MAIN TAB 3: DAILY PROGRESS & CHARTS -->
+        <section class="tab-content" id="tab-logger">
+            <div class="grid-2col">
+                <!-- Logger Form -->
+                <div class="card">
+                    <h2>📝 Log Progress Entry</h2>
+                    <form id="progressForm">
+                        <div class="input-group">
+                            <label>Timestamp (Date & Time)</label>
+                            <input type="datetime-local" id="logTimestamp" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Level</label>
+                            <input type="number" id="logLevel" value="113" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Current EXP %</label>
+                            <input type="number" id="logExpPct" step="0.01" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Notes / Map</label>
+                            <input type="text" id="logNotes" placeholder="e.g. Temple of Time 32-11 grind">
+                        </div>
+                        <button type="submit" class="btn btn-primary full-width">➕ Add Entry & Update Chart</button>
+                    </form>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn btn-outline" id="sampleDataBtn" style="flex: 1;">📊 Load Sample History</button>
+                        <button class="btn btn-danger-outline" id="clearLogBtn" style="flex: 1;">🗑️ Clear Logs</button>
+                    </div>
+                </div>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs">
-                <tbody class="divide-y divide-slate-800/60">
-                  <tr>
-                    <td class="py-2.5 text-slate-400">Total EXP Needed to Target</td>
-                    <td class="py-2.5 text-right font-bold text-white font-mono-num" id="metricLevelExpReq">15,669.97 T</td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">Current EXP Earned</td>
-                    <td class="py-2.5 text-right font-medium text-emerald-400 font-mono-num" id="metricExpEarned">4,322.34 T</td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">Total Kills Needed</td>
-                    <td class="py-2.5 text-right font-mono-num text-slate-200" id="metricKillsNeeded">3,658,740</td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">Daily Pure Grind Yield</td>
-                    <td class="py-2.5 text-right font-mono-num text-amber-300" id="metricDailyGrind">703.05 T <span class="text-[10px] text-slate-400">(+3.52%/d)</span></td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">EXP Dungeon Daily Yield</td>
-                    <td class="py-2.5 text-right font-mono-num text-indigo-400" id="metricDailyDungeon">213.92 T <span class="text-[10px] text-slate-400">(+1.07%/d)</span></td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">MPE Daily Avg Yield</td>
-                    <td class="py-2.5 text-right font-mono-num text-sky-400" id="metricDailyMpe">142.80 T <span class="text-[10px] text-slate-400">(+0.71%/d)</span></td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">Ad Booster Daily Yield</td>
-                    <td class="py-2.5 text-right font-mono-num text-amber-200" id="metricDailyAdBooster">6.49 T <span class="text-[10px] text-slate-400">(+0.03%/d)</span></td>
-                  </tr>
-                  <tr>
-                    <td class="py-2.5 text-slate-400">Anniversary / Event Yield</td>
-                    <td class="py-2.5 text-right font-mono-num text-pink-400" id="metricDailyAnniv">292.94 T <span class="text-[10px] text-slate-400">(+1.47%/d)</span></td>
-                  </tr>
-                  <tr class="bg-emerald-500/10 border-t-2 border-emerald-500/30 font-bold">
-                    <td class="py-3 px-2 text-emerald-300">Total Combined Daily Yield</td>
-                    <td class="py-3 px-2 text-right font-mono-num text-emerald-300 text-sm" id="metricCombinedDaily">1,359.20 T <span class="text-xs text-emerald-400">(+6.80%/d)</span></td>
-                  </tr>
-                </tbody>
-              </table>
+                <!-- Visual Chart -->
+                <div class="card">
+                    <h2>📈 Actual vs. Projected ETA</h2>
+                    <p class="section-desc">Comparing your actual logged progress (solid emerald line) against your projected target pace.</p>
+                    <div class="chart-wrapper">
+                        <svg id="progressChart" viewBox="0 0 500 240" width="100%" height="100%">
+                            <!-- Rendered dynamically by JS -->
+                        </svg>
+                    </div>
+                    <div class="chart-legend">
+                        <span><i class="legend-dot emerald"></i> Actual Progress</span>
+                        <span><i class="legend-dot cyan"></i> Combined Pace</span>
+                        <span><i class="legend-dot amber"></i> Pure Grind Pace</span>
+                    </div>
+                </div>
             </div>
-          </div>
 
-        </div>
+            <!-- History Table -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>📋 Logged History</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Level</th>
+                                <th>EXP %</th>
+                                <th>Daily Gain</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-      </div>
+        <!-- MAIN TAB 4: EXP REFERENCE -->
+        <section class="tab-content" id="tab-reference">
+            <div class="card">
+                <h2>📖 MapleStory Idle EXP Reference Table (Lv. 1 – 140)</h2>
+                <p class="section-desc">Required EXP, cumulative totals, and scaling multipliers per level.</p>
+                <div class="table-container max-height-table">
+                    <table class="data-table" id="expRefTable">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Required EXP</th>
+                                <th>Prev. Multiplier</th>
+                                <th>Cumulative EXP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <!-- TAB 2: PRINT SCREEN KPM & EXP SCANNER -->
-    <div id="view-scanner" class="tab-view hidden space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left: Screenshot Dropzone & OCR Reader -->
-        <div class="lg:col-span-6 space-y-4">
-          <div class="glass-card rounded-2xl p-5 border border-indigo-500/30">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <i class="fa-solid fa-camera-retro text-indigo-400"></i> Print Screen KPM & EXP Reader
-              </h3>
-              <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
-                Press Ctrl+V Anywhere
-              </span>
-            </div>
-            <p class="text-xs text-slate-400 mb-4">
-              Take a screenshot (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-200 border border-slate-700">Win+Shift+S</kbd> or <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-200 border border-slate-700">PrtScn</kbd>) of your Battle Analysis, Offline Reward popup, or EXP bar and paste it here.
-            </p>
-
-            <!-- Paste / Drop Zone -->
-            <div id="screenshotDropZone" onclick="document.getElementById('screenshotFileInput').click()"
-              class="border-2 border-dashed border-slate-700 hover:border-indigo-400 bg-slate-900/70 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[220px] relative overflow-hidden">
-              <input type="file" id="screenshotFileInput" accept="image/*" onchange="handleScreenshotFile(event)" class="hidden">
-              
-              <div id="dropZonePlaceholder" class="space-y-2">
-                <div class="w-12 h-12 rounded-full bg-indigo-500/15 text-indigo-400 flex items-center justify-center mx-auto text-xl">
-                  <i class="fa-solid fa-paste"></i>
-                </div>
-                <p class="text-sm font-semibold text-slate-200">Click to Upload or Press <span class="text-indigo-400 font-bold">Ctrl + V</span> to Paste Print Screen</p>
-                <p class="text-[11px] text-slate-500">Supports Battle Results, Offline Rewards, or EXP Bar screenshots</p>
-              </div>
-
-              <img id="screenshotPreviewImg" class="hidden max-h-[260px] rounded-xl object-contain border border-slate-700 shadow-lg" alt="Uploaded Print Screen"/>
-            </div>
-
-            <!-- OCR Status Bar -->
-            <div id="ocrStatusBox" class="hidden mt-4 p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <span class="text-indigo-300 font-semibold flex items-center gap-2">
-                  <i id="ocrSpinner" class="fa-solid fa-spinner fa-spin"></i>
-                  <span id="ocrStatusText">Scanning numbers from screenshot...</span>
-                </span>
-                <span id="ocrProgressPct" class="font-mono text-slate-400">0%</span>
-              </div>
-              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div id="ocrProgressBar" class="bg-indigo-500 h-full transition-all duration-200" style="width: 0%"></div>
-              </div>
-              <details class="text-[11px] text-slate-400 pt-1">
-                <summary class="cursor-pointer hover:text-slate-200">View Raw Detected Text</summary>
-                <pre id="ocrRawText" class="mt-2 p-2 bg-slate-950 rounded-lg text-[10px] font-mono text-slate-300 whitespace-pre-wrap max-h-28 overflow-y-auto"></pre>
-              </details>
-            </div>
-          </div>
+    <!-- GitHub Guide Modal -->
+    <div class="modal-backdrop" id="modalBackdrop">
+        <div class="modal">
+            <h2>🚀 Hosting on GitHub Pages</h2>
+            <ol>
+                <li>Create a repository on GitHub named <code>maplestory-exp-calc</code>.</li>
+                <li>Upload your 3 clean files: <code>index.html</code>, <code>styles.css</code>, and <code>app.js</code> to the root.</li>
+                <li>Go to your repository <strong>Settings ➔ Pages</strong>.</li>
+                <li>Under <strong>Branch</strong>, select <code>main</code> and <code>/ (root)</code>, then click <strong>Save</strong>.</li>
+                <li>Your live app will be ready at <code>https://&lt;username&gt;.github.io/maplestory-exp-calc/</code>!</li>
+            </ol>
+            <button class="btn btn-primary" id="closeModalBtn" style="margin-top: 20px;">Got it!</button>
         </div>
-
-        <!-- Right: 2-Print KPM Calculator & Extracted Values -->
-        <div class="lg:col-span-6 space-y-4">
-          <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-              <i class="fa-solid fa-gauge-high text-amber-500"></i> Exact KPM Calculator (From Print Screens)
-            </h3>
-            <p class="text-xs text-slate-400">
-              Use either a **single Battle/Offline summary** (Kills + Minutes) OR **two EXP % screenshots** taken a few minutes apart to get your exact KPM!
-            </p>
-
-            <!-- Mode Selector -->
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs">
-              <button type="button" onclick="setKpmCalcMode('kills')" id="kpmModeKillsBtn" class="py-2 px-3 rounded-lg bg-indigo-600 text-white font-bold transition">
-                Method A: Kills / Time
-              </button>
-              <button type="button" onclick="setKpmCalcMode('expdiff')" id="kpmModeExpBtn" class="py-2 px-3 rounded-lg text-slate-400 hover:text-white font-medium transition">
-                Method B: 2 EXP % Prints
-              </button>
-            </div>
-
-            <!-- METHOD A: Kills & Duration -->
-            <div id="kpmMethodKills" class="space-y-3 pt-1">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="text-xs text-slate-300 block mb-1">Total Mobs Killed</label>
-                  <input type="number" id="scanTotalKills" placeholder="e.g. 1140" oninput="computeScannedKpm()"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                  <label class="text-xs text-slate-300 block mb-1">Duration (Minutes)</label>
-                  <input type="number" step="0.1" id="scanDurationMin" value="10" placeholder="e.g. 10" oninput="computeScannedKpm()"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono-num focus:border-indigo-500 focus:outline-none">
-                </div>
-              </div>
-            </div>
-
-            <!-- METHOD B: 2 EXP % Screenshots -->
-            <div id="kpmMethodExpDiff" class="hidden space-y-3 pt-1">
-              <div class="grid grid-cols-3 gap-2">
-                <div>
-                  <label class="text-xs text-slate-300 block mb-1">Print 1 EXP %</label>
-                  <input type="number" step="0.001" id="scanStartExpPct" placeholder="e.g. 21.62" oninput="computeScannedKpm()"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white font-mono-num focus:border-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                  <label class="text-xs text-slate-300 block mb-1">Print 2 EXP %</label>
-                  <input type="number" step="0.001" id="scanEndExpPct" placeholder="e.g. 21.86" oninput="computeScannedKpm()"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white font-mono-num focus:border-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                  <label class="text-xs text-slate-300 block mb-1">Minutes Between</label>
-                  <input type="number" step="0.1" id="scanExpMinutes" value="10" placeholder="e.g. 10" oninput="computeScannedKpm()"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white font-mono-num focus:border-indigo-500 focus:outline-none">
-                </div>
-              </div>
-              <p class="text-[11px] text-slate-400">Uses your current Level (<span id="scanRefLevel" class="text-amber-400 font-mono">113</span>), Base EXP/Kill, and Passive Multiplier to back-calculate your exact KPM.</p>
-            </div>
-
-            <!-- Resulting KPM Box -->
-            <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-500/15 to-emerald-500/15 border border-indigo-500/30 flex items-center justify-between">
-              <div>
-                <span class="text-[11px] uppercase tracking-wider text-slate-400 block">Calculated Real KPM</span>
-                <span class="text-2xl font-black text-white font-mono-num" id="scannedKpmResult">-- KPM</span>
-                <span class="text-xs text-emerald-400 block font-mono-num" id="scannedExpHrResult">Buffed EXP/hr: --</span>
-              </div>
-              <div class="flex flex-col gap-2">
-                <button onclick="applyScannedKpm('online')" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl transition shadow-md">
-                  Apply to Online KPM
-                </button>
-                <button onclick="applyScannedKpm('offline')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-semibold text-xs px-3.5 py-1.5 rounded-xl transition">
-                  Apply to Offline KPM
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
     </div>
 
-    <!-- TAB 3: DAILY EXP PROGRESS LOGGER & VISUAL CHART -->
-    <div id="view-logger" class="tab-view hidden space-y-6">
-      
-      <!-- Top Action Bar & Quick Check-In Card -->
-      <div class="glass-card rounded-2xl p-5 border border-slate-800">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-800">
-          <div>
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-square-plus text-emerald-400"></i> Log Daily EXP Check-In
-            </h3>
-            <p class="text-xs text-slate-400">Record your daily EXP % to compare real velocity against your combined & pure grind projections.</p>
-          </div>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Saved successfully!</div>
 
-          <div class="flex items-center gap-2">
-            <button onclick="loadSampleLogHistory()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5">
-              <i class="fa-solid fa-wand-magic"></i> Load 5-Day Sample Data
-            </button>
-            <button onclick="clearAllLogs()" class="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-xl font-medium transition">
-              Clear Logs
-            </button>
-          </div>
-        </div>
-
-        <!-- Log Entry Form -->
-        <form onsubmit="handleLogSubmit(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
-          <div>
-            <label class="text-xs font-semibold text-slate-300 block mb-1">Date</label>
-            <input type="date" id="logDateInput" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono-num focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-300 block mb-1">Level</label>
-            <input type="number" id="logLevelInput" min="1" max="200" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono-num focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-300 block mb-1">EXP %</label>
-            <input type="number" step="0.01" id="logExpInput" min="0" max="99.99" required placeholder="e.g. 28.50" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono-num focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-300 block mb-1">Note (Optional)</label>
-            <input type="text" id="logNoteInput" placeholder="e.g. After 2x MPE + Dungeon" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-check"></i>
-              <span>Add Daily Log</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- VISUAL COMPARISON CHART CARD -->
-      <div class="glass-card rounded-2xl p-5 border border-slate-800">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <div>
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-chart-area text-amber-400"></i> Actual Progress vs. Projected Trajectory
-            </h3>
-            <p class="text-xs text-slate-400">Real-time comparison of actual logged progress (%) vs Combined Goal and Pure Grind projections.</p>
-          </div>
-
-          <!-- Legend -->
-          <div class="flex flex-wrap items-center gap-3 text-xs">
-            <div class="flex items-center gap-1.5">
-              <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400/50"></span>
-              <span class="text-emerald-300 font-semibold">Actual Logged</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-3 h-0.5 bg-cyan-400 inline-block"></span>
-              <span class="text-cyan-300">Combined Pace</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-3 h-0.5 bg-amber-500/60 inline-block"></span>
-              <span class="text-amber-400/80">Pure Grind Pace</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- SVG Interactive Chart Canvas Container -->
-        <div class="relative w-full h-[320px] bg-slate-950/70 rounded-xl border border-slate-800 p-2 overflow-hidden" id="chartContainer">
-          <svg id="progressSvgChart" class="w-full h-full text-xs" viewBox="0 0 800 300" preserveAspectRatio="none">
-            <!-- Rendered by JavaScript -->
-          </svg>
-          <div id="chartTooltip" class="absolute hidden pointer-events-none bg-slate-900/95 border border-amber-500/40 px-3 py-2 rounded-xl text-xs shadow-xl z-20 text-slate-200"></div>
-        </div>
-      </div>
-
-      <!-- LOG HISTORY TABLE -->
-      <div class="glass-card rounded-2xl p-5 border border-slate-800">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-            <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Check-In Log History
-          </h3>
-          <span class="text-xs text-slate-400 font-mono" id="logCountHeader">0 Entries</span>
-        </div>
-
-        <div class="overflow-x-auto rounded-xl border border-slate-800">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
-              <tr>
-                <th class="py-3 px-3">Date</th>
-                <th class="py-3 px-3">Level</th>
-                <th class="py-3 px-3 text-right">EXP %</th>
-                <th class="py-3 px-3 text-right">Daily Gain</th>
-                <th class="py-3 px-3 text-center">Pace vs Goal</th>
-                <th class="py-3 px-3">Note</th>
-                <th class="py-3 px-3 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody id="logHistoryTableBody" class="divide-y divide-slate-800/60 font-mono-num text-slate-300">
-              <!-- JS Populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- TAB 4: SCHEDULE & CALENDAR -->
-    <div id="view-timeline" class="tab-view hidden space-y-6">
-      <div class="glass-card rounded-2xl p-5 border border-slate-800">
-        
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-regular fa-calendar-days text-emerald-400"></i> Daily Leveling Progression Forecast
-            </h3>
-            <p class="text-xs text-slate-400 mt-0.5">Day-by-day comparison between Pure Grind vs. Combined Boosted rates.</p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <label for="startDateInput" class="text-xs text-slate-400 whitespace-nowrap">Start Date:</label>
-            <input type="date" id="startDateInput" onchange="calculateAll()" class="bg-slate-900 border border-slate-700 text-xs text-amber-400 font-mono-num rounded-lg px-3 py-1.5 focus:border-amber-500 focus:outline-none">
-          </div>
-        </div>
-
-        <!-- Schedule Table -->
-        <div class="overflow-x-auto rounded-xl border border-slate-800">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
-              <tr>
-                <th class="py-3 px-3">Day</th>
-                <th class="py-3 px-3">Date</th>
-                <th class="py-3 px-3 text-right">Start %</th>
-                <th class="py-3 px-3 text-right">Pure Daily +%</th>
-                <th class="py-3 px-3 text-right">Combined +%</th>
-                <th class="py-3 px-3 text-right">Combined End %</th>
-                <th class="py-3 px-3">Milestone Badge</th>
-              </tr>
-            </thead>
-            <tbody id="timelineTableBody" class="divide-y divide-slate-800/60 font-mono-num text-slate-300">
-              <!-- JS Populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 5: EXP REFERENCE TABLE -->
-    <div id="view-exptable" class="tab-view hidden space-y-6">
-      <div class="glass-card rounded-2xl p-5 border border-slate-800">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-book-bookmark text-amber-400"></i> Level EXP Requirements Table (Lv 1 - 140)
-            </h3>
-            <p class="text-xs text-slate-400">Database of EXP needed for Level 1 through Level 140.</p>
-          </div>
-
-          <div class="w-full sm:w-64">
-            <div class="relative">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
-              <input type="text" id="expSearchInput" oninput="filterExpTable(this.value)" placeholder="Search Level (e.g. 113)..."
-                class="w-full bg-slate-900 border border-slate-700 text-xs text-white rounded-xl pl-8 pr-3 py-2 focus:border-amber-500 focus:outline-none">
-            </div>
-          </div>
-        </div>
-
-        <div class="max-h-[500px] overflow-y-auto rounded-xl border border-slate-800">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold sticky top-0 border-b border-slate-800">
-              <tr>
-                <th class="py-3 px-4">Level</th>
-                <th class="py-3 px-4 text-right">EXP Required</th>
-                <th class="py-3 px-4 text-right">Formatted (B / T / Qa)</th>
-                <th class="py-3 px-4 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody id="expReferenceTableBody" class="divide-y divide-slate-800/60 font-mono-num">
-              <!-- JS Populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- QUICK LOG MODAL -->
-  <div id="quickLogModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-plus-circle text-emerald-400"></i> Quick EXP Check-In
-        </h3>
-        <button onclick="closeQuickLogModal()" class="text-slate-400 hover:text-white text-lg px-2">&times;</button>
-      </div>
-
-      <form onsubmit="handleQuickLogModalSubmit(event)" class="space-y-4">
-        <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Date</label>
-          <input type="date" id="modalLogDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono-num focus:border-emerald-500 focus:outline-none">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs font-semibold text-slate-300 block mb-1">Level</label>
-            <input type="number" id="modalLogLevel" min="1" max="200" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono-num focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-300 block mb-1">Current EXP %</label>
-            <input type="number" step="0.01" id="modalLogExp" min="0" max="99.99" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono-num focus:border-emerald-500 focus:outline-none">
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Note / Activity</label>
-          <input type="text" id="modalLogNote" placeholder="e.g. Cleared 2x MPE + 1h Event Coupon" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
-        </div>
-
-        <div class="pt-2 flex justify-end gap-2">
-          <button type="button" onclick="closeQuickLogModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold">Cancel</button>
-          <button type="submit" class="bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-emerald-500/20">Save Entry</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- GITHUB MODULAR FILES MODAL -->
-  <div id="githubModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div class="glass-card max-w-lg w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i class="fa-brands fa-github text-amber-400 text-lg"></i> Modular GitHub Repository Structure
-        </h3>
-        <button onclick="closeGitHubModal()" class="text-slate-400 hover:text-white text-lg px-2">&times;</button>
-      </div>
-
-      <div class="space-y-3 text-xs text-slate-300">
-        <p class="text-slate-400">Your project is now cleanly separated into 3 standard web files for GitHub Pages:</p>
-
-        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-[11px] text-emerald-300 space-y-1">
-          <div>📁 your-github-repo/</div>
-          <div class="pl-4">├── 📄 <span class="text-white font-bold">index.html</span> <span class="text-slate-500">(Layout & UI)</span></div>
-          <div class="pl-4">├── 🎨 <span class="text-white font-bold">styles.css</span> <span class="text-slate-500">(Glassmorphism & Animations)</span></div>
-          <div class="pl-4">└── ⚙️ <span class="text-white font-bold">app.js</span> <span class="text-slate-500">(Math Engine, OCR Scanner & Charts)</span></div>
-        </div>
-
-        <p class="text-slate-400">Upload all 3 files to the root folder of your GitHub repository. GitHub Pages automatically loads <code class="text-amber-300">index.html</code> along with its linked CSS and JS files!</p>
-      </div>
-
-      <div class="pt-2 flex justify-end">
-        <button onclick="closeGitHubModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold transition">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Application Logic -->
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

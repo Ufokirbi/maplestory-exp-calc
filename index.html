@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MapleStory Idle — EXP Calculator</title>
+    <title>🍁 MapleStory Idle — EXP Calculator</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
         <!-- Header -->
         <header class="app-header">
             <div class="logo-area">
-                <span class="maple-icon">🍁</span>
+                <div class="maple-badge">🍁</div>
                 <div>
                     <h1>MapleStory Idle</h1>
                     <p class="subtitle">EXP Calculator & Progress Hub</p>
@@ -54,7 +54,7 @@
                 </div>
                 <div class="summary-item">
                     <span class="s-label">📈 Daily Gain</span>
-                    <span class="s-value" id="summaryDailyGain">+3.52%/d</span>
+                    <span class="s-value highlight-cyan" id="summaryDailyGain">+3.52%/d</span>
                 </div>
             </div>
 
@@ -129,7 +129,7 @@
         <section class="tab-content" id="tab-scanner">
             <div class="card">
                 <h2>📸 Instant Print Screen Analyzer</h2>
-                <p class="section-desc">Paste your game screenshot (`Ctrl + V` anywhere on this tab) or drop an image file below. The OCR engine extracts your <strong>Current Level</strong>, <strong>EXP %</strong>, and <strong>KPM / EXP values</strong>, calculates your metrics, and auto-logs your entry with the exact date and time!</p>
+                <p class="section-desc">Paste your game screenshot (`Ctrl + V` anywhere on this tab) or drop an image file below. The OCR engine extracts your <strong>Current Level</strong>, <strong>EXP %</strong>, and <strong>KPM</strong>, updates your metrics, and instantly logs your progress with exact date and time!</p>
                 
                 <div class="dropzone" id="dropzone">
                     <div class="dropzone-icon">📋</div>
@@ -140,7 +140,7 @@
 
                 <div id="scanResultContainer" style="display: none; margin-top: 20px;">
                     <h3>🔍 Extracted Data Preview</h3>
-                    <div class="preview-grid">
+                    <div class="preview-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px;">
                         <div class="input-group">
                             <label>Detected Level</label>
                             <input type="number" id="scanLevel">
@@ -186,7 +186,7 @@
                             <label>Notes / Map</label>
                             <input type="text" id="logNotes" placeholder="e.g. Temple of Time 32-11 grind">
                         </div>
-                        <button type="submit" class="btn btn-primary full-width">➕ Add Entry & Update Chart</button>
+                        <button type="submit" class="btn btn-primary full-width" style="margin-top: 10px;">➕ Add Entry & Update Chart</button>
                     </form>
                     <div style="margin-top: 15px; display: flex; gap: 10px;">
                         <button class="btn btn-outline" id="sampleDataBtn" style="flex: 1;">📊 Load Sample History</button>

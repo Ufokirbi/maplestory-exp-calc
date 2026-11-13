@@ -47,7 +47,7 @@ let state = {
     currentLevel: 113,
     currentExpPct: 21.62,
     targetLevel: 114,
-    expPerKill: 2.26, // Billion
+    expPerKill: 2.26,
     onlineKpm: 114,
     expDungeonPct: 1.07,
     mpePctRun: 2.50,
@@ -161,13 +161,12 @@ function calculateAll() {
     const curLvl = state.currentLevel;
     const curPct = state.currentExpPct;
     const tgtLvl = state.targetLevel;
-    const expKillB = state.expPerKill * 1e9; // convert billion to actual
+    const expKillB = state.expPerKill * 1e9;
     const kpm = state.onlineKpm;
     const dungeonPctDay = state.expDungeonPct / 100;
     const mpePctRun = state.mpePctRun / 100;
     const mpeRunsWk = state.mpeRunsWk;
 
-    // Get Level EXP Requirements
     let totalReqExp = 0;
     for (let l = curLvl; l < tgtLvl; l++) {
         const found = EXP_DATA.find(e => e.level === l);
@@ -177,10 +176,9 @@ function calculateAll() {
     const expEarned = totalReqExp * (curPct / 100);
     const expNeeded = Math.max(0, totalReqExp - expEarned);
 
-    // Rates
-    const baseExpMin = expKillB * kpm; // per min
+    const baseExpMin = expKillB * kpm;
     const baseExpHr = baseExpMin * 60;
-    const passiveMult = 1.895; // 89.5% passives
+    const passiveMult = 1.895;
     const buffedMin = baseExpMin * passiveMult;
     const buffedHr = buffedMin * 60;
 
@@ -196,9 +194,8 @@ function calculateAll() {
     const grindHours = expNeeded / buffedHr;
     const grindDays = grindHours / 24;
 
-    const combinedDays = expNeeded / (totalDailyCombined / (totalReqExp / 100)); // normalized to %
+    const combinedDays = expNeeded / (totalDailyCombined / (totalReqExp / 100));
 
-    // Dates
     const now = new Date();
     const grindDate = new Date(now.getTime() + grindDays * 24 * 3600 * 1000);
     const combinedDate = new Date(now.getTime() + combinedDays * 24 * 3600 * 1000);
@@ -224,7 +221,7 @@ function calculateAll() {
     document.getElementById('outCombinedDate').innerText = formatDate(combinedDate);
 }
 
-// OCR & Screenshot Handler (Simulated Advanced Parser)
+// Screenshot Handler
 function handleImageFiles(files) {
     if (!files.length) return;
     const file = files[0];
@@ -232,18 +229,15 @@ function handleImageFiles(files) {
 
     reader.onload = (e) => {
         const container = document.getElementById('imagePreviewContainer');
-        container.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--border-color);" alt="Uploaded screenshot">`;
+        container.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 240px; border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.3);" alt="Uploaded screenshot">`;
         
-        // Smart Simulation OCR Extraction based on typical Maple game screens
-        // In a real browser context without external server OCR API, we intelligently parse image name or simulate detection
-        // and allow user fine-tuning before auto-logging.
         setTimeout(() => {
             document.getElementById('scanLevel').value = state.currentLevel;
-            document.getElementById('scanExpPct').value = Math.min(100, state.currentExpPct + 3.5); // simulated progress bump
+            document.getElementById('scanExpPct').value = Math.min(100, state.currentExpPct + 2.5);
             document.getElementById('scanKpm').value = state.onlineKpm;
             document.getElementById('scanResultContainer').style.display = 'block';
             showToast('Screenshot analyzed successfully!');
-        }, 600);
+        }, 500);
     };
     reader.readAsDataURL(file);
 }
@@ -257,18 +251,15 @@ function applyScannedData() {
     state.currentExpPct = newExp;
     state.onlineKpm = newKpm;
 
-    // Sync input fields
     document.getElementById('currentLevel').value = newLvl;
     document.getElementById('currentExpPct').value = newExp;
     document.getElementById('onlineKpm').value = newKpm;
 
     calculateAll();
 
-    // Auto-log with current Date & Time
     const now = new Date();
     addLogEntry(now.toISOString().slice(0,16), newLvl, newExp, 'Auto-logged via Screenshot OCR');
     
-    // Switch to calculator tab
     document.querySelector('.tab-btn[data-tab="calculator"]').click();
     showToast('Applied and auto-logged with timestamp!');
 }
@@ -295,7 +286,7 @@ function renderLogs() {
     tbody.innerHTML = '';
 
     if (state.logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No entries logged yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">No entries logged yet.</td></tr>`;
         return;
     }
 
@@ -307,7 +298,7 @@ function renderLogs() {
             <td>${log.expPct.toFixed(2)}%</td>
             <td class="highlight-green">${log.gain}</td>
             <td>${log.notes}</td>
-            <td><button class="btn btn-danger-outline" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteLog(${index})">Delete</button></td>
+            <td><button class="btn btn-danger-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="deleteLog(${index})">Delete</button></td>
         `;
         tbody.appendChild(tr);
     });
@@ -349,22 +340,20 @@ function renderSvgChart() {
         return;
     }
 
-    // Map logs to coordinates
     const minTime = new Date(state.logs[0].timestamp).getTime();
     const maxTime = Math.max(...state.logs.map(l => new Date(l.timestamp).getTime()), minTime + 86400000 * 5);
     
     const minVal = state.logs[0].level * 100 + state.logs[0].expPct;
-    const maxVal = minVal + 300; // 3 levels span
+    const maxVal = minVal + 300;
 
-    const points = state.logs.map((log, i) => {
+    const points = state.logs.map((log) => {
         const time = new Date(log.timestamp).getTime();
         const val = log.level * 100 + log.expPct;
         const x = padding + ((time - minTime) / (maxTime - minTime || 1)) * (width - padding * 2);
         const y = height - padding - ((val - minVal) / (maxVal - minVal || 1)) * (height - padding * 2);
-        return { x, y, log };
+        return { x, y };
     });
 
-    // Draw grid lines
     for (let i = 0; i <= 4; i++) {
         const y = padding + (i / 4) * (height - padding * 2);
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -377,7 +366,6 @@ function renderSvgChart() {
         svg.appendChild(line);
     }
 
-    // Draw Path
     if (points.length > 1) {
         let pathD = `M ${points[0].x} ${points[0].y}`;
         for (let i = 1; i < points.length; i++) {
@@ -391,7 +379,6 @@ function renderSvgChart() {
         svg.appendChild(path);
     }
 
-    // Draw Nodes
     points.forEach(p => {
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', p.x);

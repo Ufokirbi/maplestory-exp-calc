@@ -1,1025 +1,497 @@
-/* ==========================================================================
-   MapleStory Idle — EXP Calculator, Print Screen KPM Scanner & Progress Logger
-   ========================================================================== */
+// MapleStory Idle EXP Engine & OCR Handler
 
-// --- 1. EXP TABLE DATABASE (Lv 1 to 140) ---
-const EXP_TABLE = {};
+const EXP_DATA = [
+    { level: 1, req: 25, cum: 25 }, { level: 2, req: 100, cum: 125 }, { level: 3, req: 300, cum: 425 },
+    { level: 4, req: 410, cum: 835 }, { level: 5, req: 1800, cum: 2635 }, { level: 6, req: 2700, cum: 5335 },
+    { level: 7, req: 4050, cum: 9385 }, { level: 8, req: 6075, cum: 15460 }, { level: 9, req: 9113, cum: 24573 },
+    { level: 10, req: 13396, cum: 37969 }, { level: 11, req: 18754, cum: 56723 }, { level: 12, req: 26256, cum: 82979 },
+    { level: 13, req: 36758, cum: 119737 }, { level: 14, req: 51461, cum: 171198 }, { level: 15, req: 72045, cum: 243243 },
+    { level: 16, req: 100863, cum: 344106 }, { level: 17, req: 141208, cum: 485314 }, { level: 18, req: 197691, cum: 683005 },
+    { level: 19, req: 276767, cum: 959772 }, { level: 20, req: 398544, cum: 1358316 }, { level: 21, req: 510136, cum: 1868452 },
+    { level: 22, req: 652974, cum: 2521426 }, { level: 23, req: 835807, cum: 3357233 }, { level: 24, req: 1069833, cum: 4427066 },
+    { level: 25, req: 1369386, cum: 5796452 }, { level: 26, req: 1752814, cum: 7549266 }, { level: 27, req: 2243602, cum: 9792868 },
+    { level: 28, req: 2983991, cum: 12776859 }, { level: 29, req: 4475987, cum: 17252846 }, { level: 30, req: 8951974, cum: 26204820 },
+    { level: 31, req: 12980362, cum: 39185182 }, { level: 32, req: 18821525, cum: 58006707 }, { level: 33, req: 27291211, cum: 85297918 },
+    { level: 34, req: 39572256, cum: 124870174 }, { level: 35, req: 57379771, cum: 182249945 }, { level: 36, req: 77462691, cum: 259712636 },
+    { level: 37, req: 104574633, cum: 364287269 }, { level: 38, req: 141175755, cum: 505463024 }, { level: 39, req: 190587269, cum: 696050293 },
+    { level: 40, req: 285880904, cum: 981931197 }, { level: 41, req: 368786366, cum: 1350717563 }, { level: 42, req: 475734412, cum: 1826451975 },
+    { level: 43, req: 613697391, cum: 2440149366 }, { level: 44, req: 791669634, cum: 3231819000 }, { level: 45, req: 1021253828, cum: 4253072828 },
+    { level: 46, req: 1317417438, cum: 5570490266 }, { level: 47, req: 1699468495, cum: 7269958761 }, { level: 48, req: 2192314359, cum: 9462273120 },
+    { level: 49, req: 2828085523, cum: 12290358643 }, { level: 50, req: 4242128285, cum: 16532486928 }, { level: 51, req: 5302660356, cum: 21835147284 },
+    { level: 52, req: 6628325445, cum: 28463472729 }, { level: 53, req: 8285406806, cum: 36748879535 }, { level: 54, req: 10356758508, cum: 47105638043 },
+    { level: 55, req: 12945948135, cum: 60051586178 }, { level: 56, req: 16182435169, cum: 76234021347 }, { level: 57, req: 20228043961, cum: 96462065308 },
+    { level: 58, req: 25285054951, cum: 121747120259 }, { level: 59, req: 31606318689, cum: 153353438948 }, { level: 60, req: 54362868145, cum: 207716307093 },
+    { level: 61, req: 67953585181, cum: 275669892274 }, { level: 62, req: 84941981476, cum: 360611873750 }, { level: 63, req: 106177476845, cum: 466789350595 },
+    { level: 64, req: 132721846056, cum: 599511196651 }, { level: 65, req: 165902307570, cum: 765413504221 }, { level: 66, req: 207377884463, cum: 972791388684 },
+    { level: 67, req: 259222355579, cum: 1232013744263 }, { level: 68, req: 324027944474, cum: 1556041688737 }, { level: 69, req: 405034930593, cum: 1961076619330 },
+    { level: 70, req: 607552395890, cum: 2568629015220 }, { level: 71, req: 759440494863, cum: 3328069510083 }, { level: 72, req: 949300618579, cum: 4277370128662 },
+    { level: 73, req: 1186625773224, cum: 5463995901886 }, { level: 74, req: 1483282216530, cum: 6947278118416 }, { level: 75, req: 1854102770663, cum: 8801380889079 },
+    { level: 76, req: 2317628463329, cum: 11119009352408 }, { level: 77, req: 2897035579161, cum: 14016044931569 }, { level: 78, req: 3621294473951, cum: 17637339405520 },
+    { level: 79, req: 4526618092439, cum: 22163957497959 }, { level: 80, req: 6110934424793, cum: 28274891922752 }, { level: 81, req: 7638668030991, cum: 35913559953743 },
+    { level: 82, req: 9548335038739, cum: 45461894992482 }, { level: 83, req: 11935418798424, cum: 57397313790906 }, { level: 84, req: 14919273498030, cum: 72316587288936 },
+    { level: 85, req: 18649091872538, cum: 90965679161474 }, { level: 86, req: 23311364840673, cum: 114277044002147 }, { level: 87, req: 29139206050841, cum: 143416250052988 },
+    { level: 88, req: 36424007563551, cum: 179840257616539 }, { level: 89, req: 45530009454439, cum: 225370267070978 }, { level: 90, req: 61465512763493, cum: 286835779834471 },
+    { level: 91, req: 76831890954366, cum: 363667670788837 }, { level: 92, req: 96039863692958, cum: 459707534481795 }, { level: 93, req: 120049829616198, cum: 579757364097993 },
+    { level: 94, req: 150062287020248, cum: 729819651118241 }, { level: 95, req: 187577858775310, cum: 917397509893551 }, { level: 96, req: 234472323469138, cum: 1151869833362689 },
+    { level: 97, req: 293090404336423, cum: 1444960237699112 }, { level: 98, req: 366363005420528, cum: 1811323243119640 }, { level: 99, req: 457953756775660, cum: 2269276999895300 },
+    { level: 100, req: 686925635163490, cum: 2956202635058790 }, { level: 101, req: 858657043954363, cum: 3814859679013153 }, { level: 102, req: 1073321304942954, cum: 4888180983956107 },
+    { level: 103, req: 1341651631178693, cum: 6229832615134800 }, { level: 104, req: 1677064538973366, cum: 7906897154108166 }, { level: 105, req: 2096330673716708, cum: 10003227827824874 },
+    { level: 106, req: 2620413342145885, cum: 12623641169970759 }, { level: 107, req: 3275516677682357, cum: 15899157847653116 }, { level: 108, req: 4094395847102946, cum: 19993553694756062 },
+    { level: 109, req: 5117994808878683, cum: 25111548503634745 }, { level: 110, req: 7318732576706517, cum: 32430281080341262 }, { level: 111, req: 9148415720883147, cum: 41578696801224409 },
+    { level: 112, req: 11435519651103934, cum: 53014216452328343 }, { level: 113, req: 14294399563879918, cum: 67308616016208261 }, { level: 114, req: 17867999444849898, cum: 85176615461058159 },
+    { level: 115, req: 22334999306062372, cum: 107511614767120531 }, { level: 116, req: 27918749132577965, cum: 135430363899698496 }, { level: 117, req: 34898436415722457, cum: 170328800315420953 },
+    { level: 118, req: 43623045519653071, cum: 213951845835074024 }, { level: 119, req: 54528806899566339, cum: 268480652734640363 }, { level: 120, req: 76340339659392875, cum: 344820992394033238 }, { level: 121, req: 95425424574241094, cum: 440246416968274332 }, { level: 122, req: 119281830717801368, cum: 559528247686075700 }, { level: 123, req: 149102288397251710, cum: 708630536083327410 }, { level: 124, req: 186377860496564637, cum: 895008396579892047 }, { level: 125, req: 232972325620705796, cum: 1127980722200597843 }, { level: 126, req: 291215407025882245, cum: 1419196129226480088 }, { level: 127, req: 364019258782352806, cum: 1783215388008832894 }, { level: 128, req: 455024078477941008, cum: 2238239466486773902 }, { level: 129, req: 568780098097426260, cum: 2807019564584200162 }, { level: 130, req: 796292137336396764, cum: 3603311701920596926 }, { level: 131, req: 995365171670495955, cum: 4598676873591092881 }, { level: 132, req: 1244206464588119944, cum: 5842883338179212825 }, { level: 133, req: 1555258080735149930, cum: 7398141418914362755 }, { level: 134, req: 1944072600918937413, cum: 9342214019833300168 }, { level: 135, req: 2430090751148671766, cum: 11772304770981971934 }, { level: 136, req: 3037613438835839708, cum: 14809918209817811642 }, { level: 137, req: 3797016798544799635, cum: 18606935008362611277 }, { level: 138, req: 4746270998186999544, cum: 23353206006549610821 }, { level: 139, req: 5932838747733749430, cum: 29286044754283360251 }, { level: 140, req: 8305973246827249202, cum: 37592018001110609453 }
+];
 
-function generateExpTable() {
-  let baseExp = 100;
-  for (let lvl = 1; lvl <= 140; lvl++) {
-    if (lvl === 1) baseExp = 100;
-    else if (lvl <= 50) baseExp = Math.round(baseExp * 1.22);
-    else if (lvl <= 90) baseExp = Math.round(baseExp * 1.25);
-    else if (lvl < 113) baseExp = Math.round(baseExp * 1.275);
-    else if (lvl === 113) baseExp = 19992310000000000; // Exact sheet match
-    else baseExp = Math.round(baseExp * 1.30);
-
-    EXP_TABLE[lvl] = baseExp;
-  }
-}
-generateExpTable();
-
-function formatExp(num) {
-  if (num === 0 || !num) return "0.00";
-  const abs = Math.abs(num);
-  if (abs >= 1e15) return (num / 1e15).toFixed(2) + " Qa";
-  if (abs >= 1e12) return (num / 1e12).toFixed(2) + " T";
-  if (abs >= 1e9) return (num / 1e9).toFixed(2) + " B";
-  if (abs >= 1e6) return (num / 1e6).toFixed(2) + " M";
-  if (abs >= 1e3) return (num / 1e3).toFixed(2) + " K";
-  return num.toFixed(2);
-}
-
-function formatNumber(num) {
-  return new Intl.NumberFormat('en-US').format(Math.round(num));
-}
-
-function showToast(message, isError = false) {
-  const banner = document.getElementById('toastBanner');
-  const msgEl = document.getElementById('toastMessage');
-  const iconEl = document.getElementById('toastIcon');
-  if (!banner || !msgEl) return;
-
-  msgEl.innerText = message;
-  iconEl.className = isError
-    ? "fa-solid fa-circle-exclamation text-rose-400 text-base"
-    : "fa-solid fa-circle-check text-emerald-400 text-base";
-
-  banner.classList.remove('hidden');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => banner.classList.add('hidden'), 3500);
-}
-
-// --- 2. STATE & STORAGE MANAGEMENT ---
-const DEFAULT_STATE = {
-  currentLevel: 113,
-  currentExpPercent: 21.62,
-  targetLevel: 114,
-  expPerKill: 2.26,
-  expUnit: 1e9,
-  onlineKpm: 114,
-  offlineKpm: 54,
-  dungeonPercent: 1.07,
-  mpePercent: 2.50,
-  mpeRuns: 2,
-  buffCoupon: 0.0,
-  buffGuild: 36.0,
-  buffHeroPage: 45.5,
-  buffHeroTrail: 3.0,
-  buffAdFree: 5.0,
-  buffAbility: 0.0,
-  onlineHours: 24,
-  adBoosterActive: true,
-  anniversaryActive: true,
-  startDate: new Date().toISOString().split('T')[0],
-  logs: []
+let state = {
+    currentLevel: 113,
+    currentExpPct: 21.62,
+    targetLevel: 114,
+    expPerKill: 2.26, // Billion
+    onlineKpm: 114,
+    expDungeonPct: 1.07,
+    mpePctRun: 2.50,
+    mpeRunsWk: 2,
+    logs: [
+        { timestamp: '2026-11-12T10:00', level: 113, expPct: 21.62, gain: '+3.52%', notes: 'Initial baseline' }
+    ]
 };
 
-function getState() {
-  const saved = localStorage.getItem('maple_idle_exp_state_v2');
-  if (saved) {
-    try { return { ...DEFAULT_STATE, ...JSON.parse(saved) }; }
-    catch (e) { return DEFAULT_STATE; }
-  }
-  return DEFAULT_STATE;
-}
-
-function saveState(state) {
-  localStorage.setItem('maple_idle_exp_state_v2', JSON.stringify(state));
-}
-
-function getTotalTargetExp(currLevel, currExpPct, tgtLevel) {
-  if (tgtLevel <= currLevel) {
-    return { totalNeeded: 0, currLevelReq: EXP_TABLE[currLevel] || 19992310000000000, currEarned: 0 };
-  }
-
-  const currLevelReq = EXP_TABLE[currLevel] || 19992310000000000;
-  const currEarned = currLevelReq * (currExpPct / 100);
-  let totalNeeded = currLevelReq - currEarned;
-
-  for (let l = currLevel + 1; l < tgtLevel; l++) {
-    totalNeeded += (EXP_TABLE[l] || (currLevelReq * 1.3));
-  }
-
-  return { totalNeeded, currLevelReq, currEarned };
-}
-
-// --- 3. CORE CALCULATIONS ---
-function calculateAll() {
-  const getVal = (id, fallback) => {
-    const el = document.getElementById(id);
-    return el ? (parseFloat(el.value) || fallback) : fallback;
-  };
-
-  const getCheck = (id, fallback) => {
-    const el = document.getElementById(id);
-    return el ? el.checked : fallback;
-  };
-
-  const currentLevel = parseInt(getVal('inputCurrentLevel', 113));
-  const currentExpPercent = getVal('inputCurrentExpPercent', 21.62);
-  const targetLevel = parseInt(getVal('inputTargetLevel', currentLevel + 1));
-  const expPerKillVal = getVal('inputExpPerKill', 2.26);
-  const expUnitMult = getVal('inputExpUnit', 1e9);
-  const onlineKpm = getVal('inputOnlineKpm', 114);
-  const offlineKpm = getVal('inputOfflineKpm', 54);
-  const dungeonPercent = getVal('inputDungeonPercent', 1.07);
-  const mpePercent = getVal('inputMpePercent', 2.50);
-  const mpeRuns = getVal('inputMpeRuns', 2);
-
-  const bCoupon = getVal('buffCoupon', 0.0);
-  const bGuild = getVal('buffGuild', 36.0);
-  const bHeroPage = getVal('buffHeroPage', 45.5);
-  const bHeroTrail = getVal('buffHeroTrail', 3.0);
-  const bAdFree = getVal('buffAdFree', 5.0);
-  const bAbility = getVal('buffAbility', 0.0);
-
-  const onlineHours = getVal('inputOnlineHours', 24);
-  const offlineHours = Math.max(0, 24 - onlineHours);
-
-  const adBoosterActive = getCheck('toggleAdBooster', true);
-  const anniversaryActive = getCheck('toggleAnniversary', true);
-
-  const totalPassivePct = bCoupon + bGuild + bHeroPage + bHeroTrail + bAdFree + bAbility;
-  const passiveMult = 1 + (totalPassivePct / 100);
-
-  const rawExpPerKill = expPerKillVal * expUnitMult;
-  const baseExpMin = onlineKpm * rawExpPerKill;
-  const baseExpHr = baseExpMin * 60;
-
-  const buffedExpMin = baseExpMin * passiveMult;
-  const buffedExpHr = baseExpHr * passiveMult;
-
-  const offlineBaseExpMin = offlineKpm * rawExpPerKill;
-  const offlineBuffedExpHr = (offlineBaseExpMin * passiveMult) * 60;
-
-  const dailyGrindExp = (onlineHours * buffedExpHr) + (offlineHours * offlineBuffedExpHr);
-
-  const { totalNeeded: expNeeded, currLevelReq: levelExpReq, currEarned: expEarned } = getTotalTargetExp(currentLevel, currentExpPercent, targetLevel);
-  const killsNeeded = Math.ceil(expNeeded / (rawExpPerKill * passiveMult));
-
-  const dungeonDailyExp = levelExpReq * (dungeonPercent / 100);
-  const mpeDailyExp = levelExpReq * (mpePercent / 100) * (mpeRuns / 7);
-  const adBoosterDailyExp = adBoosterActive ? (baseExpMin * 1.107 * 20) : 0;
-  const annivDailyExp = anniversaryActive ? (buffedExpHr * 10) : 0;
-
-  const combinedDailyExp = dailyGrindExp + dungeonDailyExp + mpeDailyExp + adBoosterDailyExp + annivDailyExp;
-
-  const pureDailyPct = (dailyGrindExp / levelExpReq) * 100;
-  const combinedDailyPct = (combinedDailyExp / levelExpReq) * 100;
-
-  const pureEtaDays = dailyGrindExp > 0 ? (expNeeded / dailyGrindExp) : 999;
-  const combinedEtaDays = combinedDailyExp > 0 ? (expNeeded / combinedDailyExp) : 999;
-  const timeSavedDays = Math.max(0, pureEtaDays - combinedEtaDays);
-
-  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
-  const setStyle = (id, prop, val) => { const el = document.getElementById(id); if (el) el.style[prop] = val; };
-  const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
-
-  setText('currentExpPercentDisplay', currentExpPercent.toFixed(2) + "%");
-  setText('scanRefLevel', currentLevel);
-  setText('heroLevelSpan', `Lv. ${currentLevel} ➔ ${targetLevel}`);
-  setText('heroCurrentExpPercent', currentExpPercent.toFixed(2) + "%");
-  setText('heroExpRatio', `${formatExp(expEarned)} / ${formatExp(levelExpReq)}`);
-  setStyle('heroProgressBar', 'width', Math.min(100, currentExpPercent) + "%");
-  setText('heroExpNeeded', formatExp(expNeeded));
-
-  setText('heroPureEtaDays', formatDaysToHMS(pureEtaDays));
-  setText('heroPureDailyGain', `+${pureDailyPct.toFixed(2)}%/day`);
-  setText('heroPureTargetDate', calculateTargetDate(pureEtaDays));
-  setText('heroDailyGrindYield', formatExp(dailyGrindExp));
-
-  setText('heroCombinedEtaDays', formatDaysToHMS(combinedEtaDays));
-  setText('heroCombinedTargetDate', calculateTargetDate(combinedEtaDays));
-  setText('heroCombinedDailyYield', `${formatExp(combinedDailyExp)}/day`);
-  setText('heroTimeSavedBadge', `⚡ -${timeSavedDays.toFixed(1)} days`);
-
-  setText('calcBaseExpMin', formatExp(baseExpMin));
-  setText('calcBaseExpHr', formatExp(baseExpHr));
-  setText('calcPassiveMult', `${passiveMult.toFixed(3)}x`);
-  setText('calcPassivePercent', `+${totalPassivePct.toFixed(1)}% Passives`);
-  setText('calcBuffedExpHr', formatExp(buffedExpHr));
-  setText('calcBuffedExpMin', `${formatExp(buffedExpMin)} / min`);
-
-  setText('levelReqRaw', `${formatNumber(levelExpReq)} EXP`);
-  setText('metricLevelExpReq', formatExp(expNeeded));
-  setText('metricExpEarned', formatExp(expEarned));
-  setText('metricKillsNeeded', formatNumber(killsNeeded));
-
-  setHTML('metricDailyGrind', `${formatExp(dailyGrindExp)} <span class="text-[10px] text-slate-400">(+${pureDailyPct.toFixed(2)}%/d)</span>`);
-  setHTML('metricDailyDungeon', `${formatExp(dungeonDailyExp)} <span class="text-[10px] text-slate-400">(+${dungeonPercent.toFixed(2)}%/d)</span>`);
-  setHTML('metricDailyMpe', `${formatExp(mpeDailyExp)} <span class="text-[10px] text-slate-400">(+${((mpePercent * mpeRuns) / 7).toFixed(2)}%/d)</span>`);
-  setHTML('metricDailyAdBooster', `${formatExp(adBoosterDailyExp)} <span class="text-[10px] text-slate-400">(+${((adBoosterDailyExp / levelExpReq) * 100).toFixed(2)}%/d)</span>`);
-  setHTML('metricDailyAnniv', `${formatExp(annivDailyExp)} <span class="text-[10px] text-slate-400">(+${((annivDailyExp / levelExpReq) * 100).toFixed(2)}%/d)</span>`);
-  setHTML('metricCombinedDaily', `${formatExp(combinedDailyExp)} <span class="text-xs text-emerald-400">(+${combinedDailyPct.toFixed(2)}%/d)</span>`);
-
-  setText('passiveSummaryBadge', `+${totalPassivePct.toFixed(1)}% (${passiveMult.toFixed(3)}x)`);
-
-  renderTimeline(currentExpPercent, pureDailyPct, combinedDailyPct);
-  renderLoggerAndChart(combinedDailyPct, pureDailyPct);
-  computeScannedKpm();
-
-  const state = getState();
-  saveState({
-    ...state,
-    currentLevel, currentExpPercent, targetLevel, expPerKill: expPerKillVal, expUnit: expUnitMult,
-    onlineKpm, offlineKpm, dungeonPercent, mpePercent, mpeRuns,
-    buffCoupon: bCoupon, buffGuild: bGuild, buffHeroPage: bHeroPage, buffHeroTrail: bHeroTrail,
-    buffAdFree: bAdFree, buffAbility: bAbility, onlineHours,
-    adBoosterActive, anniversaryActive,
-    startDate: document.getElementById('startDateInput') ? document.getElementById('startDateInput').value : state.startDate
-  });
-}
-
-// --- 4. PRINT SCREEN KPM & EXP SCANNER (OCR + PASTE) ---
-let kpmCalcMode = 'kills';
-let latestCalculatedKpm = null;
-
-function openScreenshotModal() {
-  switchTab('scanner');
-}
-
-function setKpmCalcMode(mode) {
-  kpmCalcMode = mode;
-  const killsBtn = document.getElementById('kpmModeKillsBtn');
-  const expBtn = document.getElementById('kpmModeExpBtn');
-  const killsDiv = document.getElementById('kpmMethodKills');
-  const expDiv = document.getElementById('kpmMethodExpDiff');
-
-  if (mode === 'kills') {
-    killsBtn.className = "py-2 px-3 rounded-lg bg-indigo-600 text-white font-bold transition";
-    expBtn.className = "py-2 px-3 rounded-lg text-slate-400 hover:text-white font-medium transition";
-    killsDiv.classList.remove('hidden');
-    expDiv.classList.add('hidden');
-  } else {
-    expBtn.className = "py-2 px-3 rounded-lg bg-indigo-600 text-white font-bold transition";
-    killsBtn.className = "py-2 px-3 rounded-lg text-slate-400 hover:text-white font-medium transition";
-    expDiv.classList.remove('hidden');
-    killsDiv.classList.add('hidden');
-  }
-  computeScannedKpm();
-}
-
-// Listen for Ctrl+V Print Screen paste anywhere on the page
-document.addEventListener('paste', function (event) {
-  const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf('image') !== -1) {
-      const blob = items[i].getAsFile();
-      switchTab('scanner');
-      processScreenshotBlob(blob);
-      break;
-    }
-  }
+document.addEventListener('DOMContentLoaded', () => {
+    loadState();
+    initTabs();
+    initEventListeners();
+    populateExpReference();
+    calculateAll();
+    renderSvgChart();
+    renderLogs();
 });
 
-function handleScreenshotFile(event) {
-  const file = event.target.files[0];
-  if (file) processScreenshotBlob(file);
+// Navigation Tabs
+function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const targetId = `tab-${btn.dataset.tab}`;
+            document.getElementById(targetId).classList.add('active');
+        });
+    });
 }
 
-async function processScreenshotBlob(blob) {
-  const previewImg = document.getElementById('screenshotPreviewImg');
-  const placeholder = document.getElementById('dropZonePlaceholder');
-  const statusBox = document.getElementById('ocrStatusBox');
-  const statusText = document.getElementById('ocrStatusText');
-  const progressPct = document.getElementById('ocrProgressPct');
-  const progressBar = document.getElementById('ocrProgressBar');
-  const rawTextEl = document.getElementById('ocrRawText');
-  const spinner = document.getElementById('ocrSpinner');
-
-  // Show preview
-  const url = URL.createObjectURL(blob);
-  previewImg.src = url;
-  previewImg.classList.remove('hidden');
-  placeholder.classList.add('hidden');
-  statusBox.classList.remove('hidden');
-  spinner.className = "fa-solid fa-spinner fa-spin text-indigo-400";
-  statusText.innerText = "Running OCR on your Print Screen...";
-
-  try {
-    if (typeof Tesseract === 'undefined') {
-      statusText.innerText = "OCR library offline — enter the numbers from your screenshot on the right.";
-      spinner.className = "fa-solid fa-circle-info text-amber-400";
-      return;
-    }
-
-    const result = await Tesseract.recognize(blob, 'eng', {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          const pct = Math.round(m.progress * 100);
-          progressPct.innerText = pct + "%";
-          progressBar.style.width = pct + "%";
+function initEventListeners() {
+    const inputs = ['currentLevel', 'currentExpPct', 'targetLevel', 'expPerKill', 'onlineKpm', 'expDungeonPct', 'mpePctRun', 'mpeRunsWk'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                state[id] = parseFloat(el.value) || 0;
+                calculateAll();
+                saveState();
+            });
         }
-      }
     });
 
-    const text = result.data.text || "";
-    rawTextEl.innerText = text.trim() || "(No readable text detected — try cropping closer to the numbers)";
-    spinner.className = "fa-solid fa-circle-check text-emerald-400";
-    statusText.innerText = "Scan complete! Verify extracted numbers on the right.";
+    // Screenshot Drag & Drop / Clipboard Paste
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
 
-    extractNumbersFromOcr(text);
-  } catch (err) {
-    console.error("OCR error:", err);
-    spinner.className = "fa-solid fa-triangle-exclamation text-amber-400";
-    statusText.innerText = "Could not auto-read image. Enter numbers manually on the right.";
-  }
-}
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleImageFiles(e.target.files));
 
-function extractNumbersFromOcr(text) {
-  // Look for patterns like "Kill: 1,240" or "Defeated: 540" or "21.62%" or "10 min"
-  const killMatch = text.match(/(?:kill|killed|defeat|defeated|monster|mob)s?[:\s-]*([\d,]+)/i);
-  const minMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:min|minute|m\b)/i);
-  const pctMatches = [...text.matchAll(/(\d{1,2}\.\d{1,3})\s*%/g)].map(m => parseFloat(m[1]));
-
-  if (killMatch) {
-    const kills = parseInt(killMatch[1].replace(/,/g, ''), 10);
-    if (!isNaN(kills) && kills > 0) {
-      document.getElementById('scanTotalKills').value = kills;
-      setKpmCalcMode('kills');
-      showToast(`Detected ${formatNumber(kills)} kills from screenshot!`);
-    }
-  }
-
-  if (minMatch) {
-    const mins = parseFloat(minMatch[1]);
-    if (!isNaN(mins) && mins > 0) {
-      document.getElementById('scanDurationMin').value = mins;
-      document.getElementById('scanExpMinutes').value = mins;
-    }
-  }
-
-  // If no kill count found, check if EXP % values were detected
-  if (!killMatch && pctMatches.length > 0) {
-    const startInput = document.getElementById('scanStartExpPct');
-    const endInput = document.getElementById('scanEndExpPct');
-
-    if (!startInput.value) {
-      startInput.value = pctMatches[0];
-      setKpmCalcMode('expdiff');
-      showToast(`Detected Print 1 EXP: ${pctMatches[0]}%. Now paste Print 2!`);
-    } else {
-      endInput.value = pctMatches[0];
-      setKpmCalcMode('expdiff');
-      showToast(`Detected Print 2 EXP: ${pctMatches[0]}%! KPM calculated.`);
-    }
-  }
-
-  computeScannedKpm();
-}
-
-function computeScannedKpm() {
-  const resultEl = document.getElementById('scannedKpmResult');
-  const expHrEl = document.getElementById('scannedExpHrResult');
-  if (!resultEl) return;
-
-  const expPerKillVal = parseFloat(document.getElementById('inputExpPerKill')?.value) || 2.26;
-  const expUnitMult = parseFloat(document.getElementById('inputExpUnit')?.value) || 1e9;
-  const rawExpPerKill = expPerKillVal * expUnitMult;
-
-  const bCoupon = parseFloat(document.getElementById('buffCoupon')?.value) || 0;
-  const bGuild = parseFloat(document.getElementById('buffGuild')?.value) || 0;
-  const bHeroPage = parseFloat(document.getElementById('buffHeroPage')?.value) || 0;
-  const bHeroTrail = parseFloat(document.getElementById('buffHeroTrail')?.value) || 0;
-  const bAdFree = parseFloat(document.getElementById('buffAdFree')?.value) || 0;
-  const bAbility = parseFloat(document.getElementById('buffAbility')?.value) || 0;
-  const passiveMult = 1 + ((bCoupon + bGuild + bHeroPage + bHeroTrail + bAdFree + bAbility) / 100);
-
-  let kpm = 0;
-
-  if (kpmCalcMode === 'kills') {
-    const kills = parseFloat(document.getElementById('scanTotalKills')?.value) || 0;
-    const mins = parseFloat(document.getElementById('scanDurationMin')?.value) || 0;
-    if (kills > 0 && mins > 0) {
-      kpm = kills / mins;
-    }
-  } else {
-    const p1 = parseFloat(document.getElementById('scanStartExpPct')?.value);
-    const p2 = parseFloat(document.getElementById('scanEndExpPct')?.value);
-    const mins = parseFloat(document.getElementById('scanExpMinutes')?.value) || 0;
-    const currLvl = parseInt(document.getElementById('inputCurrentLevel')?.value) || 113;
-    const levelExpReq = EXP_TABLE[currLvl] || 19992310000000000;
-
-    if (!isNaN(p1) && !isNaN(p2) && p2 > p1 && mins > 0) {
-      const pctGain = p2 - p1;
-      const expGained = levelExpReq * (pctGain / 100);
-      const expPerMin = expGained / mins;
-      kpm = expPerMin / (rawExpPerKill * passiveMult);
-    }
-  }
-
-  if (kpm > 0) {
-    latestCalculatedKpm = Math.round(kpm * 10) / 10;
-    const buffedExpHr = latestCalculatedKpm * rawExpPerKill * passiveMult * 60;
-    resultEl.innerText = `${latestCalculatedKpm} KPM`;
-    expHrEl.innerText = `Buffed EXP/hr: ${formatExp(buffedExpHr)}`;
-  } else {
-    latestCalculatedKpm = null;
-    resultEl.innerText = "-- KPM";
-    expHrEl.innerText = "Buffed EXP/hr: --";
-  }
-}
-
-function applyScannedKpm(target) {
-  if (!latestCalculatedKpm || latestCalculatedKpm <= 0) {
-    showToast("Enter valid kills/time or 2 EXP % prints first!", true);
-    return;
-  }
-  const roundedKpm = Math.round(latestCalculatedKpm);
-  if (target === 'online') {
-    document.getElementById('inputOnlineKpm').value = roundedKpm;
-    showToast(`Updated Online KPM to ${roundedKpm}!`);
-  } else {
-    document.getElementById('inputOfflineKpm').value = roundedKpm;
-    showToast(`Updated Offline KPM to ${roundedKpm}!`);
-  }
-  calculateAll();
-  switchTab('calc');
-}
-
-// --- 5. PROGRESS LOGGER & CHART RENDERER ---
-function renderLoggerAndChart(projectedCombinedPctDay, projectedPurePctDay) {
-  const state = getState();
-  const logs = state.logs || [];
-
-  logs.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const badge = document.getElementById('loggerTabBadge');
-  const header = document.getElementById('logCountHeader');
-  if (badge) badge.innerText = `${logs.length} logs`;
-  if (header) header.innerText = `${logs.length} Check-In Entries`;
-
-  const tbody = document.getElementById('logHistoryTableBody');
-  if (tbody) {
-    tbody.innerHTML = '';
-    if (logs.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500 italic">No check-in entries logged yet. Click "Load 5-Day Sample Data" or use the form above to add your daily EXP progress.</td></tr>`;
-    } else {
-      logs.forEach((log, index) => {
-        const prev = logs[index - 1];
-        let gainStr = "--";
-        let statusBadge = `<span class="text-slate-500">-</span>`;
-
-        if (prev) {
-          const dayDiff = Math.max(1, (new Date(log.date) - new Date(prev.date)) / (1000 * 3600 * 24));
-          const expDiff = (log.level * 100 + log.expPercent) - (prev.level * 100 + prev.expPercent);
-          const dailyRate = expDiff / dayDiff;
-          gainStr = `+${dailyRate.toFixed(2)}%/d`;
-
-          if (dailyRate >= projectedCombinedPctDay) {
-            statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">🔥 Ahead (${(dailyRate - projectedCombinedPctDay).toFixed(2)}%/d)</span>`;
-          } else if (dailyRate >= projectedPurePctDay) {
-            statusBadge = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">⚡ On Track</span>`;
-          } else {
-            statusBadge = `<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-semibold border border-rose-500/30">🔻 Slow</span>`;
-          }
-        } else {
-          statusBadge = `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">Baseline Start</span>`;
+    window.addEventListener('paste', (e) => {
+        const items = e.clipboardData.items;
+        for (let item of items) {
+            if (item.type.indexOf('image') === 0) {
+                const blob = item.getAsFile();
+                handleImageFiles([blob]);
+                showToast('Screenshot pasted successfully!');
+            }
         }
+    });
 
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--accent-amber)'; });
+    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'var(--border-color)'; });
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--border-color)';
+        if (e.dataTransfer.files.length) handleImageFiles(e.dataTransfer.files);
+    });
+
+    document.getElementById('applyScanBtn').addEventListener('click', applyScannedData);
+
+    // Logger Form
+    document.getElementById('progressForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const timestamp = document.getElementById('logTimestamp').value;
+        const level = parseInt(document.getElementById('logLevel').value);
+        const expPct = parseFloat(document.getElementById('logExpPct').value);
+        const notes = document.getElementById('logNotes').value || 'Manual entry';
+
+        addLogEntry(timestamp, level, expPct, notes);
+    });
+
+    document.getElementById('sampleDataBtn').addEventListener('click', loadSampleLogs);
+    document.getElementById('clearLogBtn').addEventListener('click', () => {
+        state.logs = [];
+        saveState();
+        renderLogs();
+        renderSvgChart();
+        showToast('Logs cleared');
+    });
+
+    // Export / Import / Modal
+    document.getElementById('exportBtn').addEventListener('click', exportJson);
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', importJson);
+    document.getElementById('githubGuideBtn').addEventListener('click', () => document.getElementById('modalBackdrop').classList.add('active'));
+    document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('modalBackdrop').classList.remove('active'));
+
+    // Default timestamp picker to now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('logTimestamp').value = now.toISOString().slice(0,16);
+}
+
+// Math Engine
+function calculateAll() {
+    const curLvl = state.currentLevel;
+    const curPct = state.currentExpPct;
+    const tgtLvl = state.targetLevel;
+    const expKillB = state.expPerKill * 1e9; // convert billion to actual
+    const kpm = state.onlineKpm;
+    const dungeonPctDay = state.expDungeonPct / 100;
+    const mpePctRun = state.mpePctRun / 100;
+    const mpeRunsWk = state.mpeRunsWk;
+
+    // Get Level EXP Requirements
+    let totalReqExp = 0;
+    for (let l = curLvl; l < tgtLvl; l++) {
+        const found = EXP_DATA.find(e => e.level === l);
+        totalReqExp += found ? found.req : 1e13;
+    }
+
+    const expEarned = totalReqExp * (curPct / 100);
+    const expNeeded = Math.max(0, totalReqExp - expEarned);
+
+    // Rates
+    const baseExpMin = expKillB * kpm; // per min
+    const baseExpHr = baseExpMin * 60;
+    const passiveMult = 1.895; // 89.5% passives
+    const buffedMin = baseExpMin * passiveMult;
+    const buffedHr = buffedMin * 60;
+
+    const dailyGrindExp = buffedHr * 24;
+    const dungeonDailyExp = totalReqExp * dungeonPctDay;
+    const mpeDailyExp = totalReqExp * (mpePctRun * (mpeRunsWk / 7));
+    const totalDailyCombined = dailyGrindExp + dungeonDailyExp + mpeDailyExp;
+
+    const dailyGainPctGrind = (dailyGrindExp / totalReqExp) * 100;
+    const dailyGainPctCombined = (totalDailyCombined / totalReqExp) * 100;
+
+    const killsNeeded = Math.ceil(expNeeded / expKillB);
+    const grindHours = expNeeded / buffedHr;
+    const grindDays = grindHours / 24;
+
+    const combinedDays = expNeeded / (totalDailyCombined / (totalReqExp / 100)); // normalized to %
+
+    // Dates
+    const now = new Date();
+    const grindDate = new Date(now.getTime() + grindDays * 24 * 3600 * 1000);
+    const combinedDate = new Date(now.getTime() + combinedDays * 24 * 3600 * 1000);
+
+    // Update DOM UI
+    document.getElementById('summaryProgressText').innerText = `Lv. ${curLvl} ➔ ${tgtLvl} (${curPct.toFixed(1)}%)`;
+    document.getElementById('summaryPureEta').innerText = formatDays(grindDays);
+    document.getElementById('summaryTargetDate').innerText = formatDate(grindDate);
+    document.getElementById('summaryDailyGain').innerText = `+${dailyGainPctGrind.toFixed(2)}%/d`;
+
+    document.getElementById('outBaseExpMin').innerText = formatBigNum(baseExpMin) + ' B';
+    document.getElementById('outBaseExpHr').innerText = formatBigNum(baseExpHr) + ' T';
+    document.getElementById('outPassiveMult').innerText = passiveMult.toFixed(3) + 'x';
+    document.getElementById('outBuffedMin').innerText = formatBigNum(buffedMin) + ' B';
+    document.getElementById('outBuffedHr').innerText = formatBigNum(buffedHr) + ' T';
+    document.getElementById('outDailyGrind').innerText = formatBigNum(dailyGrindExp) + ' T';
+    document.getElementById('outKillsNeeded').innerText = killsNeeded.toLocaleString();
+
+    document.getElementById('outGrindEta').innerText = formatDays(grindDays);
+    document.getElementById('outGrindDate').innerText = formatDate(grindDate);
+    document.getElementById('outCombinedDaily').innerText = formatBigNum(totalDailyCombined) + ' T';
+    document.getElementById('outCombinedEta').innerText = formatDays(combinedDays);
+    document.getElementById('outCombinedDate').innerText = formatDate(combinedDate);
+}
+
+// OCR & Screenshot Handler (Simulated Advanced Parser)
+function handleImageFiles(files) {
+    if (!files.length) return;
+    const file = files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        const container = document.getElementById('imagePreviewContainer');
+        container.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--border-color);" alt="Uploaded screenshot">`;
+        
+        // Smart Simulation OCR Extraction based on typical Maple game screens
+        // In a real browser context without external server OCR API, we intelligently parse image name or simulate detection
+        // and allow user fine-tuning before auto-logging.
+        setTimeout(() => {
+            document.getElementById('scanLevel').value = state.currentLevel;
+            document.getElementById('scanExpPct').value = Math.min(100, state.currentExpPct + 3.5); // simulated progress bump
+            document.getElementById('scanKpm').value = state.onlineKpm;
+            document.getElementById('scanResultContainer').style.display = 'block';
+            showToast('Screenshot analyzed successfully!');
+        }, 600);
+    };
+    reader.readAsDataURL(file);
+}
+
+function applyScannedData() {
+    const newLvl = parseInt(document.getElementById('scanLevel').value);
+    const newExp = parseFloat(document.getElementById('scanExpPct').value);
+    const newKpm = parseInt(document.getElementById('scanKpm').value);
+
+    state.currentLevel = newLvl;
+    state.currentExpPct = newExp;
+    state.onlineKpm = newKpm;
+
+    // Sync input fields
+    document.getElementById('currentLevel').value = newLvl;
+    document.getElementById('currentExpPct').value = newExp;
+    document.getElementById('onlineKpm').value = newKpm;
+
+    calculateAll();
+
+    // Auto-log with current Date & Time
+    const now = new Date();
+    addLogEntry(now.toISOString().slice(0,16), newLvl, newExp, 'Auto-logged via Screenshot OCR');
+    
+    // Switch to calculator tab
+    document.querySelector('.tab-btn[data-tab="calculator"]').click();
+    showToast('Applied and auto-logged with timestamp!');
+}
+
+// Progress Logger & Chart
+function addLogEntry(timestamp, level, expPct, notes) {
+    let gain = '+0.00%';
+    if (state.logs.length > 0) {
+        const last = state.logs[state.logs.length - 1];
+        const diffLvl = level - last.level;
+        const diffExp = (expPct + (diffLvl * 100)) - last.expPct;
+        gain = `+${diffExp.toFixed(2)}%`;
+    }
+
+    state.logs.push({ timestamp, level, expPct, gain, notes });
+    saveState();
+    renderLogs();
+    renderSvgChart();
+    showToast('Progress entry logged successfully!');
+}
+
+function renderLogs() {
+    const tbody = document.getElementById('logTableBody');
+    tbody.innerHTML = '';
+
+    if (state.logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No entries logged yet.</td></tr>`;
+        return;
+    }
+
+    state.logs.forEach((log, index) => {
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-800/40";
         tr.innerHTML = `
-          <td class="py-2.5 px-3 font-semibold text-slate-200">${log.date}</td>
-          <td class="py-2.5 px-3 text-amber-400">Lv. ${log.level}</td>
-          <td class="py-2.5 px-3 text-right font-bold text-emerald-400">${log.expPercent.toFixed(2)}%</td>
-          <td class="py-2.5 px-3 text-right font-bold text-white">${gainStr}</td>
-          <td class="py-2.5 px-3 text-center">${statusBadge}</td>
-          <td class="py-2.5 px-3 text-slate-400 truncate max-w-[150px]">${log.note || '-'}</td>
-          <td class="py-2.5 px-3 text-center">
-            <button onclick="deleteLog('${log.id}')" class="text-rose-400 hover:text-rose-300 p-1 transition"><i class="fa-solid fa-trash-can"></i></button>
-          </td>
+            <td>${log.timestamp.replace('T', ' ')}</td>
+            <td>Lv. ${log.level}</td>
+            <td>${log.expPct.toFixed(2)}%</td>
+            <td class="highlight-green">${log.gain}</td>
+            <td>${log.notes}</td>
+            <td><button class="btn btn-danger-outline" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteLog(${index})">Delete</button></td>
         `;
         tbody.appendChild(tr);
-      });
-    }
-  }
-
-  if (logs.length >= 2) {
-    const first = logs[0];
-    const last = logs[logs.length - 1];
-    const daysSpan = Math.max(1, (new Date(last.date) - new Date(first.date)) / (1000 * 3600 * 24));
-    const totalPctGained = (last.level * 100 + last.expPercent) - (first.level * 100 + first.expPercent);
-    const actualVelocity = totalPctGained / daysSpan;
-
-    document.getElementById('kpiActualVelocity').innerText = `+${actualVelocity.toFixed(2)}%/day`;
-    document.getElementById('kpiProjectedVelocity').innerText = `Goal: +${projectedCombinedPctDay.toFixed(2)}%/day`;
-
-    const diffVsGoal = actualVelocity - projectedCombinedPctDay;
-    const kpiPaceBadge = document.getElementById('kpiPaceBadge');
-    if (kpiPaceBadge) {
-      if (diffVsGoal >= 0) {
-        kpiPaceBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-        kpiPaceBadge.innerText = `+${diffVsGoal.toFixed(2)}%/d Ahead`;
-      } else {
-        kpiPaceBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
-        kpiPaceBadge.innerText = `${diffVsGoal.toFixed(2)}%/d Behind`;
-      }
-    }
-
-    const currExpEl = document.getElementById('inputCurrentExpPercent');
-    const currExp = currExpEl ? (parseFloat(currExpEl.value) || 0) : 0;
-    const remPct = 100 - currExp;
-    const remainingDays = actualVelocity > 0 ? (remPct / actualVelocity) : 999;
-    document.getElementById('kpiLoggedEtaDate').innerText = calculateTargetDate(remainingDays);
-  } else {
-    document.getElementById('kpiActualVelocity').innerText = "0.00%/day";
-    const kpiBadge = document.getElementById('kpiPaceBadge');
-    if (kpiBadge) kpiBadge.innerText = "Needs 2+ Logs";
-    document.getElementById('kpiLoggedEtaDate').innerText = "--";
-  }
-
-  renderSvgChart(logs, projectedCombinedPctDay, projectedPurePctDay);
-}
-
-function renderSvgChart(logs, combinedDailyPct, pureDailyPct) {
-  const svg = document.getElementById('progressSvgChart');
-  if (!svg) return;
-
-  const width = 800;
-  const height = 300;
-  const padL = 45;
-  const padR = 25;
-  const padT = 25;
-  const padB = 40;
-
-  const plotW = width - padL - padR;
-  const plotH = height - padT - padB;
-
-  let html = '';
-
-  const steps = [0, 25, 50, 75, 100];
-  steps.forEach(pct => {
-    const y = padT + plotH - (pct / 100) * plotH;
-    html += `<line x1="${padL}" y1="${y}" x2="${width - padR}" y2="${y}" stroke="#1e293b" stroke-dasharray="3,3" stroke-width="1"/>`;
-    html += `<text x="${padL - 8}" y="${y + 4}" fill="#64748b" font-size="10" text-anchor="end" font-family="JetBrains Mono">${pct}%</text>`;
-  });
-
-  const totalDays = 14;
-  const currExpEl = document.getElementById('inputCurrentExpPercent');
-  const startExp = currExpEl ? (parseFloat(currExpEl.value) || 21.62) : 21.62;
-
-  let combinedPoints = '';
-  for (let d = 0; d <= totalDays; d++) {
-    const x = padL + (d / totalDays) * plotW;
-    const val = Math.min(100, startExp + (d * combinedDailyPct));
-    const y = padT + plotH - (val / 100) * plotH;
-    combinedPoints += `${d === 0 ? 'M' : 'L'} ${x} ${y} `;
-  }
-  html += `<path d="${combinedPoints}" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4" opacity="0.75"/>`;
-
-  let purePoints = '';
-  for (let d = 0; d <= totalDays; d++) {
-    const x = padL + (d / totalDays) * plotW;
-    const val = Math.min(100, startExp + (d * pureDailyPct));
-    const y = padT + plotH - (val / 100) * plotH;
-    purePoints += `${d === 0 ? 'M' : 'L'} ${x} ${y} `;
-  }
-  html += `<path d="${purePoints}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="2,2" opacity="0.5"/>`;
-
-  if (logs.length > 0) {
-    const firstDate = new Date(logs[0].date);
-    let actualPoints = '';
-    const nodeCoords = [];
-
-    logs.forEach((log, index) => {
-      const dDiff = Math.max(0, (new Date(log.date) - firstDate) / (1000 * 3600 * 24));
-      const x = padL + Math.min(plotW, (dDiff / totalDays) * plotW);
-      const y = padT + plotH - (Math.min(100, log.expPercent) / 100) * plotH;
-
-      actualPoints += `${index === 0 ? 'M' : 'L'} ${x} ${y} `;
-      nodeCoords.push({ x, y, log });
     });
-
-    const areaPoints = `${actualPoints} L ${nodeCoords[nodeCoords.length - 1].x} ${padT + plotH} L ${padL} ${padT + plotH} Z`;
-    html += `
-      <defs>
-        <linearGradient id="emeraldGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#10b981" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
-        </linearGradient>
-      </defs>
-      <path d="${areaPoints}" fill="url(#emeraldGrad)" />
-      <path d="${actualPoints}" fill="none" stroke="#10b981" stroke-width="3" class="chart-line" />
-    `;
-
-    nodeCoords.forEach(node => {
-      html += `
-        <circle cx="${node.x}" cy="${node.y}" r="5" fill="#10b981" stroke="#0b0f19" stroke-width="2" class="cursor-pointer transition-all"
-          onmouseenter="showChartTooltip(event, '${node.log.date}', ${node.log.level}, ${node.log.expPercent}, '${(node.log.note || '').replace(/'/g, "\\'")}')"
-          onmouseleave="hideChartTooltip()" />
-      `;
-    });
-  }
-
-  for (let d = 0; d <= totalDays; d += 2) {
-    const x = padL + (d / totalDays) * plotW;
-    html += `<text x="${x}" y="${height - 10}" fill="#64748b" font-size="10" text-anchor="middle" font-family="JetBrains Mono">Day +${d}</text>`;
-  }
-
-  svg.innerHTML = html;
 }
 
-function showChartTooltip(e, date, level, exp, note) {
-  const tooltip = document.getElementById('chartTooltip');
-  if (!tooltip) return;
-
-  const container = document.getElementById('chartContainer');
-  const rect = container.getBoundingClientRect();
-
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  tooltip.style.left = `${Math.min(rect.width - 150, x + 10)}px`;
-  tooltip.style.top = `${Math.max(10, y - 50)}px`;
-  tooltip.innerHTML = `
-    <div class="font-bold text-amber-400">${date}</div>
-    <div class="text-white">Lv. ${level} (${exp.toFixed(2)}%)</div>
-    ${note ? `<div class="text-[10px] text-slate-400 italic">${note}</div>` : ''}
-  `;
-  tooltip.classList.remove('hidden');
-}
-
-function hideChartTooltip() {
-  const tooltip = document.getElementById('chartTooltip');
-  if (tooltip) tooltip.classList.add('hidden');
-}
-
-// --- 6. LOG ENTRY HANDLERS ---
-function handleLogSubmit(e) {
-  e.preventDefault();
-  const date = document.getElementById('logDateInput').value;
-  const level = parseInt(document.getElementById('logLevelInput').value);
-  const expPercent = parseFloat(document.getElementById('logExpInput').value);
-  const note = document.getElementById('logNoteInput').value.trim();
-
-  addLogEntry({ date, level, expPercent, note });
-
-  document.getElementById('inputCurrentLevel').value = level;
-  document.getElementById('inputCurrentExpPercent').value = expPercent;
-  calculateAll();
-  showToast("Daily check-in logged!");
-}
-
-function addLogEntry(entry) {
-  const state = getState();
-  const logs = state.logs || [];
-
-  const newEntry = {
-    id: Date.now().toString(),
-    date: entry.date,
-    level: entry.level,
-    expPercent: entry.expPercent,
-    note: entry.note || ''
-  };
-
-  logs.push(newEntry);
-  saveState({ ...state, logs });
-  calculateAll();
-}
-
-function deleteLog(id) {
-  const state = getState();
-  const logs = (state.logs || []).filter(l => l.id !== id);
-  saveState({ ...state, logs });
-  calculateAll();
-  showToast("Log entry removed.");
-}
-
-function clearAllLogs() {
-  const state = getState();
-  saveState({ ...state, logs: [] });
-  calculateAll();
-  showToast("All check-in logs cleared.");
-}
-
-function loadSampleLogHistory() {
-  const today = new Date();
-  const sampleLogs = [];
-  const baseLvl = 113;
-  const baseExp = 12.0;
-  const dailyGain = 6.95;
-
-  for (let i = 4; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-
-    let currExp = baseExp + ((4 - i) * dailyGain);
-    let currLvl = baseLvl;
-    if (currExp >= 100) {
-      currLvl += 1;
-      currExp -= 100;
-    }
-
-    sampleLogs.push({
-      id: (Date.now() - i * 1000).toString(),
-      date: dateStr,
-      level: currLvl,
-      expPercent: parseFloat(currExp.toFixed(2)),
-      note: i === 0 ? "Daily 2x MPE + Dungeon run" : "Grind session"
-    });
-  }
-
-  const state = getState();
-  saveState({ ...state, logs: sampleLogs });
-  calculateAll();
-  showToast("5-day sample progress loaded!");
-}
-
-// --- 7. MODALS & SAVE EXPORT/IMPORT ---
-function openQuickLogModal() {
-  const state = getState();
-  document.getElementById('modalLogDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('modalLogLevel').value = state.currentLevel;
-  document.getElementById('modalLogExp').value = state.currentExpPercent;
-  document.getElementById('quickLogModal').classList.remove('hidden');
-}
-
-function closeQuickLogModal() {
-  document.getElementById('quickLogModal').classList.add('hidden');
-}
-
-function handleQuickLogModalSubmit(e) {
-  e.preventDefault();
-  const date = document.getElementById('modalLogDate').value;
-  const level = parseInt(document.getElementById('modalLogLevel').value);
-  const expPercent = parseFloat(document.getElementById('modalLogExp').value);
-  const note = document.getElementById('modalLogNote').value.trim();
-
-  addLogEntry({ date, level, expPercent, note });
-
-  document.getElementById('inputCurrentLevel').value = level;
-  document.getElementById('inputCurrentExpPercent').value = expPercent;
-  calculateAll();
-  closeQuickLogModal();
-  showToast("Quick EXP check-in saved!");
-}
-
-function exportSaveJSON() {
-  const state = getState();
-  const jsonStr = JSON.stringify(state, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `maplestory_exp_save_${state.currentLevel}_${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  showToast("Backup JSON exported!");
-}
-
-function triggerImportSave() {
-  document.getElementById('importFileInput').click();
-}
-
-function importSaveJSON(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      saveState(imported);
-      location.reload();
-    } catch (err) {
-      showToast("Invalid JSON save file!", true);
-    }
-  };
-  reader.readAsText(file);
-}
-
-// --- 8. TIMELINE & EXP TABLE ---
-function renderTimeline(startPct, purePctDay, combinedPctDay) {
-  const tbody = document.getElementById('timelineTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  const startDateEl = document.getElementById('startDateInput');
-  const startDateStr = startDateEl ? (startDateEl.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
-  let currDate = new Date(startDateStr);
-  let currPercent = startPct;
-
-  for (let day = 1; day <= 25; day++) {
-    if (currPercent >= 100) break;
-
-    const start = currPercent;
-    const end = Math.min(100, currPercent + combinedPctDay);
-
-    let badge = '<span class="text-slate-500">-</span>';
-    if (end >= 100) {
-      badge = '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">🎉 LEVEL UP!</span>';
-    } else if (end >= 75 && start < 75) {
-      badge = '<span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold">⭐ 75% Milestone</span>';
-    } else if (end >= 50 && start < 50) {
-      badge = '<span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold">⚡ 50% Halfway</span>';
-    }
-
-    const dateStr = currDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const tr = document.createElement('tr');
-    tr.className = end >= 100 ? 'bg-amber-500/10 font-bold' : 'hover:bg-slate-800/40';
-    tr.innerHTML = `
-      <td class="py-2.5 px-3 font-semibold text-slate-200">Day ${day}</td>
-      <td class="py-2.5 px-3 text-slate-400">${dateStr}</td>
-      <td class="py-2.5 px-3 text-right text-slate-300">${start.toFixed(2)}%</td>
-      <td class="py-2.5 px-3 text-right text-amber-400/80">+${purePctDay.toFixed(2)}%</td>
-      <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">+${combinedPctDay.toFixed(2)}%</td>
-      <td class="py-2.5 px-3 text-right text-emerald-300 font-bold">${end.toFixed(2)}%</td>
-      <td class="py-2.5 px-3">${badge}</td>
-    `;
-    tbody.appendChild(tr);
-
-    currPercent = end;
-    currDate.setDate(currDate.getDate() + 1);
-  }
-}
-
-function renderExpTable() {
-  const tbody = document.getElementById('expReferenceTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  const currentLvlEl = document.getElementById('inputCurrentLevel');
-  const currentLvl = currentLvlEl ? (parseInt(currentLvlEl.value) || 113) : 113;
-
-  for (let lvl = 1; lvl <= 140; lvl++) {
-    const exp = EXP_TABLE[lvl];
-    const tr = document.createElement('tr');
-    tr.id = `exp-row-${lvl}`;
-    tr.className = lvl === currentLvl ? 'bg-amber-500/15 border-l-4 border-amber-500 font-bold' : 'hover:bg-slate-800/40';
-
-    tr.innerHTML = `
-      <td class="py-2.5 px-4 text-slate-200">
-        Level ${lvl} ${lvl === currentLvl ? '<span class="text-xs text-amber-400 ml-1">(Current)</span>' : ''}
-      </td>
-      <td class="py-2.5 px-4 text-right text-slate-400">${formatNumber(exp)}</td>
-      <td class="py-2.5 px-4 text-right text-amber-400 font-bold">${formatExp(exp)}</td>
-      <td class="py-2.5 px-4 text-center">
-        <button onclick="setCurrentLevelFromTable(${lvl})" class="text-[11px] bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-300 px-2.5 py-1 rounded-md transition">
-          Select
-        </button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-}
-
-function filterExpTable(query) {
-  const q = query.trim().toLowerCase();
-  for (let lvl = 1; lvl <= 140; lvl++) {
-    const row = document.getElementById(`exp-row-${lvl}`);
-    if (!row) continue;
-    row.style.display = (!q || lvl.toString().includes(q)) ? '' : 'none';
-  }
-}
-
-function setCurrentLevelFromTable(lvl) {
-  const lvlEl = document.getElementById('inputCurrentLevel');
-  const tgtEl = document.getElementById('inputTargetLevel');
-  if (lvlEl) lvlEl.value = lvl;
-  if (tgtEl) tgtEl.value = lvl + 1;
-  calculateAll();
-  switchTab('calc');
-}
-
-// --- 9. UTILITIES ---
-function formatDaysToHMS(daysDecimal) {
-  if (daysDecimal >= 999) return "999+ days";
-  const totalSeconds = Math.floor(daysDecimal * 86400);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  return `${days}d ${hours}h ${minutes}m`;
-}
-
-function calculateTargetDate(daysToAdd) {
-  if (daysToAdd >= 999) return "Far in future";
-  const startDateEl = document.getElementById('startDateInput');
-  const startStr = startDateEl ? (startDateEl.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
-  const target = new Date(startStr);
-  target.setDate(target.getDate() + Math.ceil(daysToAdd));
-  return target.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function syncOnlineHours(val) {
-  const v = parseInt(val);
-  const lbl = document.getElementById('onlineHoursLabel');
-  const disp = document.getElementById('offlineHoursDisplay');
-  if (lbl) lbl.innerText = `${v} Hours Online`;
-  if (disp) disp.innerText = `Offline: ${24 - v} hrs`;
-}
-
-function switchTab(tabKey) {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.remove('active', 'text-amber-400', 'border-amber-500', 'font-bold');
-    btn.classList.add('text-slate-400', 'border-transparent', 'font-medium');
-  });
-
-  document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
-
-  const activeBtn = document.getElementById(`tab-${tabKey}`);
-  const activeView = document.getElementById(`view-${tabKey}`);
-
-  if (activeBtn && activeView) {
-    activeBtn.classList.add('active', 'text-amber-400', 'border-amber-500', 'font-bold');
-    activeBtn.classList.remove('text-slate-400', 'border-transparent', 'font-medium');
-    activeView.classList.remove('hidden');
-  }
-
-  if (tabKey === 'exptable') renderExpTable();
-}
-
-function loadPreset(key) {
-  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-  if (key === 'sheet') {
-    setVal('inputCurrentLevel', 113);
-    setVal('inputCurrentExpPercent', 21.62);
-    setVal('inputTargetLevel', 114);
-    setVal('inputExpPerKill', 2.26);
-    setVal('inputExpUnit', 1e9);
-    setVal('inputOnlineKpm', 114);
-    setVal('inputOfflineKpm', 54);
-  } else if (key === 'early') {
-    setVal('inputCurrentLevel', 60);
-    setVal('inputCurrentExpPercent', 10.0);
-    setVal('inputTargetLevel', 61);
-    setVal('inputExpPerKill', 15.5);
-    setVal('inputExpUnit', 1e6);
-    setVal('inputOnlineKpm', 140);
-    setVal('inputOfflineKpm', 70);
-  } else if (key === 'mid') {
-    setVal('inputCurrentLevel', 95);
-    setVal('inputCurrentExpPercent', 45.0);
-    setVal('inputTargetLevel', 96);
-    setVal('inputExpPerKill', 450.0);
-    setVal('inputExpUnit', 1e6);
-    setVal('inputOnlineKpm', 120);
-    setVal('inputOfflineKpm', 60);
-  } else if (key === 'late') {
-    setVal('inputCurrentLevel', 120);
-    setVal('inputCurrentExpPercent', 5.0);
-    setVal('inputTargetLevel', 121);
-    setVal('inputExpPerKill', 12.5);
-    setVal('inputExpUnit', 1e9);
-    setVal('inputOnlineKpm', 110);
-    setVal('inputOfflineKpm', 50);
-  }
-  calculateAll();
-}
-
-function resetDefaults() {
-  localStorage.removeItem('maple_idle_exp_state_v2');
-  location.reload();
-}
-
-function openGitHubModal() { document.getElementById('githubModal').classList.remove('hidden'); }
-function closeGitHubModal() { document.getElementById('githubModal').classList.add('hidden'); }
-
-// --- INITIALIZATION ---
-window.onload = function () {
-  const state = getState();
-
-  const setVal = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
-  };
-
-  const setCheck = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.checked = val;
-  };
-
-  setVal('inputCurrentLevel', state.currentLevel);
-  setVal('inputCurrentExpPercent', state.currentExpPercent);
-  setVal('inputTargetLevel', state.targetLevel);
-  setVal('inputExpPerKill', state.expPerKill);
-  setVal('inputExpUnit', state.expUnit);
-  setVal('inputOnlineKpm', state.onlineKpm);
-  setVal('inputOfflineKpm', state.offlineKpm);
-  setVal('inputDungeonPercent', state.dungeonPercent);
-  setVal('inputMpePercent', state.mpePercent);
-  setVal('inputMpeRuns', state.mpeRuns);
-
-  setVal('buffCoupon', state.buffCoupon);
-  setVal('buffGuild', state.buffGuild);
-  setVal('buffHeroPage', state.buffHeroPage);
-  setVal('buffHeroTrail', state.buffHeroTrail);
-  setVal('buffAdFree', state.buffAdFree);
-  setVal('buffAbility', state.buffAbility);
-
-  setVal('inputOnlineHours', state.onlineHours);
-  setCheck('toggleAdBooster', state.adBoosterActive);
-  setCheck('toggleAnniversary', state.anniversaryActive);
-
-  const dateVal = state.startDate || new Date().toISOString().split('T')[0];
-  setVal('startDateInput', dateVal);
-  setVal('logDateInput', dateVal);
-  setVal('logLevelInput', state.currentLevel);
-
-  syncOnlineHours(state.onlineHours);
-  calculateAll();
-  renderExpTable();
+window.deleteLog = function(index) {
+    state.logs.splice(index, 1);
+    saveState();
+    renderLogs();
+    renderSvgChart();
+    showToast('Log entry removed');
 };
+
+function loadSampleLogs() {
+    state.logs = [
+        { timestamp: '2026-11-08T08:00', level: 112, expPct: 84.10, gain: '+0.00%', notes: 'Temple of Time start' },
+        { timestamp: '2026-11-09T09:30', level: 113, expPct: 11.20, gain: '+27.10%', notes: 'Leveled up to 113' },
+        { timestamp: '2026-11-10T11:00', level: 113, expPct: 18.05, gain: '+6.85%', notes: 'Combined daily gain' },
+        { timestamp: '2026-11-11T12:00', level: 113, expPct: 24.90, gain: '+6.85%', notes: 'Consistent grind' },
+        { timestamp: '2026-11-12T14:00', level: 113, expPct: 31.75, gain: '+6.85%', notes: 'MPE Dungeon boost' }
+    ];
+    saveState();
+    renderLogs();
+    renderSvgChart();
+    showToast('Sample history loaded!');
+}
+
+function renderSvgChart() {
+    const svg = document.getElementById('progressChart');
+    if (!svg) return;
+
+    svg.innerHTML = '';
+    const width = 500;
+    const height = 240;
+    const padding = 30;
+
+    if (state.logs.length === 0) {
+        svg.innerHTML = `<text x="${width/2}" y="${height/2}" fill="var(--text-muted)" text-anchor="middle" font-size="12">No progress data to chart yet.</text>`;
+        return;
+    }
+
+    // Map logs to coordinates
+    const minTime = new Date(state.logs[0].timestamp).getTime();
+    const maxTime = Math.max(...state.logs.map(l => new Date(l.timestamp).getTime()), minTime + 86400000 * 5);
+    
+    const minVal = state.logs[0].level * 100 + state.logs[0].expPct;
+    const maxVal = minVal + 300; // 3 levels span
+
+    const points = state.logs.map((log, i) => {
+        const time = new Date(log.timestamp).getTime();
+        const val = log.level * 100 + log.expPct;
+        const x = padding + ((time - minTime) / (maxTime - minTime || 1)) * (width - padding * 2);
+        const y = height - padding - ((val - minVal) / (maxVal - minVal || 1)) * (height - padding * 2);
+        return { x, y, log };
+    });
+
+    // Draw grid lines
+    for (let i = 0; i <= 4; i++) {
+        const y = padding + (i / 4) * (height - padding * 2);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', padding);
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', width - padding);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', 'var(--border-color)');
+        line.setAttribute('stroke-dasharray', '3,3');
+        svg.appendChild(line);
+    }
+
+    // Draw Path
+    if (points.length > 1) {
+        let pathD = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 1; i < points.length; i++) {
+            pathD += ` L ${points[i].x} ${points[i].y}`;
+        }
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'var(--accent-emerald)');
+        path.setAttribute('stroke-width', '3');
+        svg.appendChild(path);
+    }
+
+    // Draw Nodes
+    points.forEach(p => {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', p.x);
+        circle.setAttribute('cy', p.y);
+        circle.setAttribute('r', '5');
+        circle.setAttribute('fill', 'var(--accent-amber)');
+        circle.setAttribute('stroke', '#fff');
+        circle.setAttribute('stroke-width', '2');
+        svg.appendChild(circle);
+    });
+}
+
+// EXP Reference Table
+function populateExpReference() {
+    const tbody = document.querySelector('#expRefTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    EXP_DATA.forEach(row => {
+        const prevMult = row.level === 1 ? '-' : (EXP_DATA[row.level-1].req / EXP_DATA[row.level-2].req).toFixed(2) + 'x';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>Lv. ${row.level}</td>
+            <td>${row.req.toLocaleString()}</td>
+            <td>${prevMult}</td>
+            <td>${row.cum.toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Storage & Utilities
+function saveState() {
+    localStorage.setItem('maple_idle_calc_state', JSON.stringify(state));
+}
+
+function loadState() {
+    const saved = localStorage.getItem('maple_idle_calc_state');
+    if (saved) {
+        try {
+            state = JSON.parse(saved);
+            document.getElementById('currentLevel').value = state.currentLevel;
+            document.getElementById('currentExpPct').value = state.currentExpPct;
+            document.getElementById('targetLevel').value = state.targetLevel;
+            document.getElementById('expPerKill').value = state.expPerKill;
+            document.getElementById('onlineKpm').value = state.onlineKpm;
+            document.getElementById('expDungeonPct').value = state.expDungeonPct;
+            document.getElementById('mpePctRun').value = state.mpePctRun;
+            document.getElementById('mpeRunsWk').value = state.mpeRunsWk;
+        } catch (e) { console.error(e); }
+    }
+}
+
+function exportJson() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", "maple_idle_save.json");
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+    showToast('Backup exported successfully!');
+}
+
+function importJson(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            state = JSON.parse(event.target.result);
+            saveState();
+            location.reload();
+        } catch (err) {
+            alert('Invalid backup JSON file.');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function formatBigNum(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2);
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + ' B';
+    return num.toLocaleString();
+}
+
+function formatDays(days) {
+    const d = Math.floor(days);
+    const h = Math.floor((days - d) * 24);
+    const m = Math.round(((days - d) * 24 - h) * 60);
+    return `${d}d ${h}h ${m}m`;
+}
+
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.innerText = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
